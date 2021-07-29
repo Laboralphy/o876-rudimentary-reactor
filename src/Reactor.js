@@ -53,6 +53,14 @@ class Reactor {
 					value = proxify(value)
 				}
 				return Reflect.set(target, property, value, receiver)
+			},
+			has(target, property) {
+				track(target, property)
+				return Reflect.has(target, property)
+			},
+			deleteProperty(target, property) {
+				trigger(target, property)
+				return Reflect.deleteProperty(target, property)
 			}
 		}
 		this._state = this.proxify(state)

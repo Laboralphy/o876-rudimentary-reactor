@@ -180,4 +180,23 @@ describe('Reactor', function () {
 		r.state.a.sort((a, b) => a.name.localeCompare(b.name))
 		expect(r.getters.names).toBe('Queen Maeve, Starlight, Stormfront, The Deep')
 	})
+	
+	it('deals with in operator and property deletion', function () {
+		const state = {
+			x: {
+				good: true,
+				evil: false,
+				neutral: false
+			}
+		}
+		const getters = {
+			hasNeutralProperty: state => 'neutral' in state.x
+		}
+		const r = new Reactor(state, getters)
+		expect(r.getters.hasNeutralProperty).toBeTruthy()
+		delete r.state.x.neutral
+		expect(r.getters.hasNeutralProperty).toBeFalsy()
+		r.state.x.neutral = true
+		expect(r.getters.hasNeutralProperty).toBeTruthy()
+	})
 })
