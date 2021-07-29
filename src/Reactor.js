@@ -1,3 +1,10 @@
+/**
+ * This class is an implementation of Vue.js reactivity system
+ * as it is describe at : https://v3.vuejs.org/guide/reactivity.html
+ * @author Raphaël Marandet
+ * @date 2021-07-29
+ */
+
 const ARRAY_TRACKED_METHODS = [
 	'entries',
 	'every',
@@ -31,6 +38,8 @@ const ARRAY_TRIGGERED_METHODS = [
 	'unshift',
 	'reverse'
 ]
+
+const REACTOR_NAMESPACE = '**REACTOR_NS**'
 
 class Reactor {
 	constructor (state, getters) {
@@ -80,7 +89,7 @@ class Reactor {
 	/**
 	 * Creates an effect that push itself onto a stack
 	 * in order to keep track of what's currently running.
-	 * @param fn {function} code to run
+	 * @param fn {function} code to run (should encapsulate a getter)
 	 */
 	createEffect (fn) {
 		const effect = () => {
@@ -113,12 +122,8 @@ class Reactor {
 	 * @param property {string} property name
 	 * @return {boolean}
 	 */
-	findDependency(getter, target, property) {
-		const d = getter._depreg
-		if (!Array.isArray(d)) {
-			throw new Error('getter ' + getter._name + ' has no valid dependency register')
-		}
-		return d.some(tp => tp.target === target && tp.property === property)
+	findDependency(registry, target, property) {
+		return !!registry.find(tp => tp.target === target && tp.property === property)
 	}
 
 	/**
@@ -131,7 +136,9 @@ class Reactor {
 		// all runningEffects receive target/prop
 		this._runningEffects.forEach(re => {
 			const d = re._depreg
-			d.push({ target, property })
+			if (!this.findDependency(d, target, property)) {
+				d.push({ target, property })
+			}
 		})
 	}
 
@@ -144,8 +151,9 @@ class Reactor {
 	trigger (target, property) {
 		// invalidate cache for all getters having target/property
 		this.iterate(this._getters, (g, name) => {
-			if (this.findDependency(g, target, property)) {
-				g._invalidCache = true
+			const gns = g[REACTOR_NAMESPACE]
+			if (this.findDependency(gns._depreg, target, property)) {
+				gns._invalidCache = true
 			}
 		})
 	}
@@ -168,6 +176,12 @@ class Reactor {
 		}
 	}
 	
+	/**
+	 * Turn an array into à reactive array
+	 * @param aTarget {[]}
+	 * @param name {string} array name useful for tracking dependency
+	 * @return {[]} clone of aTarget
+	 */
 	proxifyArray (aTarget, name) {
 		const aClone = aTarget.map(e => this.proxify(e))
 		ARRAY_TRACKED_METHODS.forEach(m => {
@@ -189,6 +203,11 @@ class Reactor {
 		return aClone
 	}
 	
+	/**
+	 * Turn an object into à reactive object
+	 * @param aTarget {object}
+	 * @return {Proxy} proxified version of oTarget
+	 */
 	proxifyObject (oTarget) {
 		const oClone = {}
 		this.iterate(oTarget, (value, key) => {
@@ -226,10 +245,12 @@ class Reactor {
 			throw new TypeError(`Getter "${name}" must be a function ; "${sGetterType}" was given.`)
 		}
 		this._getters[name] = getter
-		getter._cache = undefined
-		getter._invalidCache = true
-		getter._name = name
-		getter._depreg = []
+		getter[REACTOR_NAMESPACE] = {
+			_cache: undefined,
+			_invalidCache: true,
+			_name: name,
+			_depreg: []
+		}
 		Object.defineProperty(
 			this._getterProxies,
 			name,
@@ -240,30 +261,25 @@ class Reactor {
 		)
 	}
 	
-	setProperty (target, property, value) {
-		target[property] = value
-		this.proxify(target)
-	}
-	
 	/**
 	 * runs a getter
 	 * @param name {string} getter name
 	 * @return {*} result of the getter
 	 */
 	runGetter (name) {
-		const fn = this._getters[name]
-		if (!fn._invalidCache) {
-			return fn._cache
+		const getter = this._getters[name]
+		const gns = getter[REACTOR_NAMESPACE]
+		if (!gns._invalidCache) {
+			return gns._cache
 		}
 		const pEffect = () => {
-			fn._cache = fn(this._state, this.getters)
-			fn._invalidCache = false
+			gns._cache = getter(this._state, this.getters)
+			gns._invalidCache = false
 		}
-		pEffect._depreg = fn._depreg = []
+		pEffect._depreg = gns._depreg = []
 		this.createEffect(pEffect)
-		return fn._cache
+		return gns._cache
 	}
 }
 
 module.exports = Reactor
-

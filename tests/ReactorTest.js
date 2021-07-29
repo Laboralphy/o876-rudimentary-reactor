@@ -199,4 +199,87 @@ describe('Reactor', function () {
 		r.state.x.neutral = true
 		expect(r.getters.hasNeutralProperty).toBeTruthy()
 	})
+	
+	it('deals with a slightly more complex state', function () {
+		const state = {
+			equip: {
+				weapon: {
+					name: 'sword',
+					weight: 6,
+					effects: [
+						{
+							type: 'bonus',
+							ability: 'strength',
+							value: 2
+						},
+						{
+							type: 'bonus',
+							ability: 'attack',
+							value: 2
+						}
+					]
+				},
+				armor: {
+					name: 'armor dragon',
+					weight: 30,
+					effects: [
+						{
+							type: 'bonus',
+							ability: 'armor',
+							value: 5
+						},
+						{
+							type: 'bonus',
+							ability: 'resist-fire',
+							value: 4
+						}
+					]
+				},
+				shield: {
+					name: 'shield tall',
+					weight: 15,
+					effects: [
+						{
+							type: 'bonus',
+							ability: 'armor',
+							value: 2
+						},
+						{
+							type: 'bonus',
+							ability: 'armor',
+							value: 1
+						}
+					]
+				}
+			}
+		}
+		const getters = {
+			getAC: state => {
+				let nAC = 0
+				for (let e in state.equip) {
+					nAC += state
+						.equip[e]
+						.effects
+						.filter(e => e.type === 'bonus' && e.ability === 'armor')
+						.reduce((prev, curr) => curr.value + prev, 0)
+				}
+				return nAC
+			}
+		}
+		expect(getters.getAC(state)).toBe(8)
+		
+		// put in Reactor
+		
+		const r = new Reactor(state, getters)
+		expect(r.getters.getAC).toBe(8)
+		
+		// let's add a shield penalty
+		r.state.equip.shield.effects.push({
+			type: 'bonus',
+			ability: 'armor',
+			value: -1 
+		})
+		expect(r.getters.getAC).toBe(7)
+		
+	})
 })
