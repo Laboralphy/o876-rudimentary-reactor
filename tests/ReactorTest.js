@@ -280,6 +280,21 @@ describe('Reactor', function () {
 			value: -1 
 		})
 		expect(r.getters.getAC).toBe(7)
-		
+	})
+	
+	it('using $length reactive property', function () {
+		const state = {
+			a: []
+		}
+		const getters = {
+			render_1: state => 'there ' + (state.a.length > 1 ? 'are' : 'is') + ' ' + state.a.length + ' item' + (state.a.length > 1 ? 's' : '') + '.',
+			render_2: state => 'there ' + (state.a.$length > 1 ? 'are' : 'is') + ' ' + state.a.$length + ' item' + (state.a.$length > 1 ? 's' : '') + '.' 
+		}
+		const r = new Reactor(state, getters)
+		expect(r.getters.render_1).toBe('there is 0 item.')
+		expect(r.getters.render_2).toBe('there is 0 item.')
+		r.state.a.push(5, 5, 5)
+		expect(r.getters.render_1).toBe('there is 0 item.') // .length is NOT reactive
+		expect(r.getters.render_2).toBe('there are 3 items.') // but .$length is.
 	})
 })

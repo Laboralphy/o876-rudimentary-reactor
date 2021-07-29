@@ -200,6 +200,17 @@ class Reactor {
 				}
 			})
 		})
+		// adding a custom wrapper property
+		Object.defineProperty(aClone, '$length', {
+			get: () => {
+				this.track(aClone, '')
+				return aClone.length
+			},
+			set: value => {
+				this.trigger(aClone, '')
+				aClone.length = value
+			}
+		})
 		return aClone
 	}
 	
