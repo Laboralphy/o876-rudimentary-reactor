@@ -1,0 +1,26 @@
+{
+  "name": "o876-rudimentary-reactor",
+  "version": "1.0.0",
+  "description": "A rudimentary implementation of Vue.js reactivity",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "jasmine tests"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/laboralphy/o876-rudimentary-reactor.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/laboralphy/o876-rudimentary-reactor/issues"
+  },
+  "homepage": "https://github.com/laboralphy/o876-rudimentary-reactor#readme",
+  "dependencies": {
+    "jasmine": "^3.8.0"
+  }
+}

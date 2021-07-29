@@ -37,12 +37,8 @@ class Reactor {
 		this._runningEffects = []
 		this._getters = {}
 		this._getterProxies = {}
-		const track = (target, property) => {
-			this.track(target, property)
-		}
-		const trigger = (target, property) => {
-			this.trigger(target, property)
-		}
+		const track = this.track.bind(this)
+		const trigger = this.trigger.bind(this)
 		const proxify = (target) => {
 			return new Proxy(oTarget, this._handler)
 		}
@@ -217,6 +213,10 @@ class Reactor {
 	 * @param getter {string} getter function
 	 */
 	defineGetter (name, getter) {
+		const sGetterType = typeof getter
+		if (sGetterType !== 'function') {
+			throw new TypeError(`Getter "${name}" must be a function ; "${sGetterType}" was given.`)
+		}
 		this._getters[name] = getter
 		getter._cache = undefined
 		getter._invalidCache = true
@@ -248,7 +248,7 @@ class Reactor {
 			return fn._cache
 		}
 		const pEffect = () => {
-			fn._cache = fn(this._state)
+			fn._cache = fn(this._state, this.getters)
 			fn._invalidCache = false
 		}
 		pEffect._depreg = fn._depreg = []
@@ -256,3 +256,6 @@ class Reactor {
 		return fn._cache
 	}
 }
+
+module.exports = Reactor
+
