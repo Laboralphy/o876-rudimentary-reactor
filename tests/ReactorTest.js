@@ -287,14 +287,24 @@ describe('Reactor', function () {
 			a: []
 		}
 		const getters = {
+			// this getter uses "length" property
 			render_1: state => 'there ' + (state.a.length > 1 ? 'are' : 'is') + ' ' + state.a.length + ' item' + (state.a.length > 1 ? 's' : '') + '.',
+			
+			// this getter uses "$length" custom property (only available thru Reactor Class)
 			render_2: state => 'there ' + (state.a.$length > 1 ? 'are' : 'is') + ' ' + state.a.$length + ' item' + (state.a.$length > 1 ? 's' : '') + '.' 
 		}
 		const r = new Reactor(state, getters)
 		expect(r.getters.render_1).toBe('there is 0 item.')
 		expect(r.getters.render_2).toBe('there is 0 item.')
+
+		// let's add 3 items
 		r.state.a.push(5, 5, 5)
-		expect(r.getters.render_1).toBe('there is 0 item.') // .length is NOT reactive
-		expect(r.getters.render_2).toBe('there are 3 items.') // but .$length is.
+		// .length is NOT reactive
+		// so the getter "render_1" will not be updated
+		expect(r.getters.render_1).toBe('there is 0 item.')
+		
+		// on the other hand, .$length is reactive
+		// the getter "render_2" will be updated with the new length value 
+		expect(r.getters.render_2).toBe('there are 3 items.')
 	})
 })
