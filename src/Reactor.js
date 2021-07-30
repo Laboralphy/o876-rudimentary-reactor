@@ -1,10 +1,14 @@
 /**
  * This class is an implementation of Vue.js reactivity system
- * as it is describe at : https://v3.vuejs.org/guide/reactivity.html
+ * as it is described at : https://v3.vuejs.org/guide/reactivity.html
  * @author Raphaël Marandet
  * @date 2021-07-29
  */
 
+/**
+ * these are the Array methods that are to be tracked in order to 
+ * maintain reactivity
+ */
 const ARRAY_TRACKED_METHODS = [
 	'entries',
 	'every',
@@ -27,6 +31,9 @@ const ARRAY_TRACKED_METHODS = [
 	'values'
 ]
 
+/**
+ * these Array methods triggers cache invalidation on dependent getters
+ */
 const ARRAY_TRIGGERED_METHODS = [
 	'fill',
 	'copyWithin',
@@ -39,8 +46,15 @@ const ARRAY_TRIGGERED_METHODS = [
 	'reverse'
 ]
 
-const REACTOR_NAMESPACE = '**REACTOR_NS**'
+const REACTOR_NAMESPACE = '**O876_REACTOR_NS**'
 
+/**
+ * Instances of classe Reactor provide two properties :
+ * - state : a proxified version of the state
+ * - getters : a set of reactive getters
+ * 
+ * see ReactorTest unit tests to see how to use
+ */
 class Reactor {
 	constructor (state, getters) {
 		this._runningEffects = []

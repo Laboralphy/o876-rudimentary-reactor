@@ -13,7 +13,14 @@
     "type": "git",
     "url": "git+ssh://git@github.com/laboralphy/o876-rudimentary-reactor.git"
   },
-  "keywords": ["reactivity", "javascript", "vue.js", "laboralphy", "proxy", "state manager"],
+  "keywords": [
+    "reactivity",
+    "javascript",
+    "vue.js",
+    "laboralphy",
+    "proxy",
+    "state manager"
+  ],
   "author": "Raphaël Marandet",
   "license": "ISC",
   "bugs": {
