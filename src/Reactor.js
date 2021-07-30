@@ -47,6 +47,8 @@ const ARRAY_TRIGGERED_METHODS = [
 ]
 
 const REACTOR_NAMESPACE = '**O876_REACTOR_NS**'
+const IS_PROXY = REACTOR_NAMESPACE + 'IS_PROXY'
+const SYMBOL_PROXY = Symbol(IS_PROXY)
 
 /**
  * Instances of classe Reactor provide two properties :
@@ -56,17 +58,21 @@ const REACTOR_NAMESPACE = '**O876_REACTOR_NS**'
  * see ReactorTest unit tests to see how to use
  */
 class Reactor {
-	constructor (state, getters) {
+	constructor ({ state, getters, mutations = {} }) {
 		this._runningEffects = []
 		this._getters = {}
 		this._getterProxies = {}
+		this._mutations = {}
 		const track = this.track.bind(this)
 		const trigger = this.trigger.bind(this)
 		const proxify = (target) => {
-			return new Proxy(oTarget, this._handler)
+			return this.createProxy(oTarget)
 		}
 		this._handler = {
 			get(target, property, receiver) {
+				if (property === SYMBOL_PROXY) {
+					return true
+				}
 				track(target, property)
 				return Reflect.get(target, property, receiver)
 			},
@@ -90,6 +96,21 @@ class Reactor {
 		this.iterate(getters, (g, name) => {
 			this.defineGetter(name, g)
 		})
+		this.iterate(mutations, (m, name) => {
+			this.defineMutation(name, m)
+		})
+	}
+	
+	createProxy (oTarget) {
+		if (this.isReactive(oTarget)) {
+			return oTarget
+		}
+		const proxy = new Proxy(oTarget, this._handler)
+		return proxy
+	}
+	
+	isReactive (oTarget) {
+		return oTarget[SYMBOL_PROXY]
 	}
 	
 	get state () {
@@ -98,6 +119,10 @@ class Reactor {
 
 	get getters () {
 		return this._getterProxies
+	}
+	
+	get mutations () {
+		return this._mutations
 	}
 
 	/**
@@ -210,10 +235,11 @@ class Reactor {
 			Object.defineProperty(aClone, m, {
 				value: (...args) => {
 					this.trigger(aClone, '')
-					return Array.prototype[m].call(aClone, ...args)
+					return Array.prototype[m].call(aClone, ...(args.map(i => this.proxify(i))))
 				}
 			})
 		})
+		
 		// adding a custom wrapper property
 		Object.defineProperty(aClone, '$length', {
 			get: () => {
@@ -238,7 +264,7 @@ class Reactor {
 		this.iterate(oTarget, (value, key) => {
 			oClone[key] = this.proxify(value)
 		})
-		return new Proxy(oClone, this._handler)
+		return this.createProxy(oClone)
 	}
 
 	/**
@@ -284,6 +310,16 @@ class Reactor {
 				get: () => this.runGetter(name)
 			}
 		)
+	}
+	
+	defineMutation (name, mutation) {
+		this._mutations[name] = payload => {
+			mutation({
+				state: this.state,
+				getters: this.getters,
+				mutations: this.mutations
+			}, payload)
+		}
 	}
 	
 	/**
