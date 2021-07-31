@@ -58,36 +58,43 @@ const SYMBOL_PROXY = Symbol(IS_PROXY)
  * see ReactorTest unit tests to see how to use
  */
 class Reactor {
-  constructor({state, getters, mutations = {}}) {
+  /**
+   *
+   * @param state
+   * @param getters
+   * @param mutations
+   * @returns {boolean|any}
+   */
+  constructor ({ state, getters, mutations = {} }) {
     this._runningEffects = []
     this._getters = {}
     this._getterProxies = {}
     this._mutations = {}
     const track = this.track.bind(this)
     const trigger = this.trigger.bind(this)
-    const proxify = (target) => {
-      return this.createProxy(oTarget)
+    const proxify = target => {
+      return this.createProxy(target)
     }
     this._handler = {
-      get(target, property, receiver) {
+      get (target, property, receiver) {
         if (property === SYMBOL_PROXY) {
           return true
         }
         track(target, property)
         return Reflect.get(target, property, receiver)
       },
-      set(target, property, value, receiver) {
+      set (target, property, value, receiver) {
         trigger(target, property)
         if (typeof target[property] === 'object') {
           value = proxify(value)
         }
         return Reflect.set(target, property, value, receiver)
       },
-      has(target, property) {
+      has (target, property) {
         track(target, property)
         return Reflect.has(target, property)
       },
-      deleteProperty(target, property) {
+      deleteProperty (target, property) {
         trigger(target, property)
         return Reflect.deleteProperty(target, property)
       }
@@ -101,26 +108,26 @@ class Reactor {
     })
   }
 
-  createProxy(oTarget) {
+  createProxy (oTarget) {
     if (this.isReactive(oTarget)) {
       return oTarget
     }
     return new Proxy(oTarget, this._handler)
   }
 
-  isReactive(oTarget) {
+  isReactive (oTarget) {
     return oTarget[SYMBOL_PROXY]
   }
 
-  get state() {
+  get state () {
     return this._state
   }
 
-  get getters() {
+  get getters () {
     return this._getterProxies
   }
 
-  get mutations() {
+  get mutations () {
     return this._mutations
   }
 
@@ -129,7 +136,7 @@ class Reactor {
    * in order to keep track of what's currently running.
    * @param fn {function} code to run (should encapsulate a getter)
    */
-  createEffect(fn) {
+  createEffect (fn) {
     const effect = () => {
       this._runningEffects.push(effect)
       fn()
@@ -144,7 +151,7 @@ class Reactor {
    * @param oObject {object} object to be iterated
    * @param f {function} function called back for each object property
    */
-  iterate(oObject, f) {
+  iterate (oObject, f) {
     for (const x in oObject) {
       if (Object.prototype.hasOwnProperty.call(oObject, x)) {
         f(oObject[x], x, oObject)
@@ -160,7 +167,7 @@ class Reactor {
    * @param property {string} property name
    * @return {boolean}
    */
-  findDependency(registry, target, property) {
+  findDependency (registry, target, property) {
     return !!registry.find(tp => tp.target === target && tp.property === property)
   }
 
@@ -170,12 +177,12 @@ class Reactor {
    * @param target {object} an object whose property is being accessed
    * @param property {string} name of the property that is accessed
    */
-  track(target, property) {
+  track (target, property) {
     // all runningEffects receive target/prop
     this._runningEffects.forEach(re => {
       const d = re._depreg
       if (!this.findDependency(d, target, property)) {
-        d.push({target, property})
+        d.push({ target, property })
       }
     })
   }
@@ -186,9 +193,9 @@ class Reactor {
    * @param target {object} an object whose property is being modified
    * @param property {string} name of the property that is modified
    */
-  trigger(target, property) {
+  trigger (target, property) {
     // invalidate cache for all getters having target/property
-    this.iterate(this._getters, (g, name) => {
+    this.iterate(this._getters, g => {
       const gns = g[REACTOR_NAMESPACE]
       if (this.findDependency(gns._depreg, target, property)) {
         gns._invalidCache = true
@@ -196,7 +203,7 @@ class Reactor {
     })
   }
 
-  getType(x) {
+  getType (x) {
     const sType = typeof x
     switch (sType) {
       case 'object':
@@ -219,7 +226,7 @@ class Reactor {
    * @param name {string} array name useful for tracking dependency
    * @return {[]} clone of aTarget
    */
-  proxifyArray(aTarget, name) {
+  proxifyArray (aTarget, name) {
     const aClone = aTarget.map(e => this.proxify(e))
     ARRAY_TRACKED_METHODS.forEach(m => {
       Object.defineProperty(aClone, m, {
@@ -257,7 +264,7 @@ class Reactor {
    * @param oTarget
    * @returns {Proxy}
    */
-  proxifyObject(oTarget) {
+  proxifyObject (oTarget) {
     const oClone = {}
     this.iterate(oTarget, (value, key) => {
       oClone[key] = this.proxify(value)
@@ -270,7 +277,7 @@ class Reactor {
    * @param target {object}
    * @param name {string}
    */
-  proxify(target, name = undefined) {
+  proxify (target, name = undefined) {
     switch (this.getType(target)) {
       case 'object':
         return this.proxifyObject(target)
@@ -288,7 +295,7 @@ class Reactor {
    * @param name {string} name of the getter
    * @param getter {string} getter function
    */
-  defineGetter(name, getter) {
+  defineGetter (name, getter) {
     const sGetterType = typeof getter
     if (sGetterType !== 'function') {
       throw new TypeError(`Getter "${name}" must be a function ; "${sGetterType}" was given.`)
@@ -310,7 +317,7 @@ class Reactor {
     )
   }
 
-  defineMutation(name, mutation) {
+  defineMutation (name, mutation) {
     this._mutations[name] = payload => {
       mutation({
         state: this.state,
@@ -325,7 +332,7 @@ class Reactor {
    * @param name {string} getter name
    * @return {*} result of the getter
    */
-  runGetter(name) {
+  runGetter (name) {
     const getter = this._getters[name]
     const gns = getter[REACTOR_NAMESPACE]
     if (!gns._invalidCache) {
