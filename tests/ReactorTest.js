@@ -4,7 +4,7 @@ describe('Reactor', function () {
 	it('reactor class exists', function () {
 		expect(Reactor).toBeDefined()
 	})
-	
+
 	it('basic getter testing', function () {
 		// simple state with props "a" & "b"
 		const state = {
@@ -18,7 +18,7 @@ describe('Reactor', function () {
 		const r = new Reactor({ state, getters })
 		expect(r.getters.sum).toBe(35)
 	})
-	
+
 	it('changing state', function () {
 		const state = {
 			a: 10,
@@ -32,7 +32,7 @@ describe('Reactor', function () {
 		r.state.a = 55
 		expect(r.getters.sum).toBe(55 + 25)
 	})
-	
+
 	it('checking if cache works', function () {
 		let nComputed = 0 // used by getter "sum"
 		const state = {
@@ -62,13 +62,13 @@ describe('Reactor', function () {
 
 		expect(r.getters.sum).toBe(55 + 25)
 		expect(nComputed).toBe(2) // "sum" : no need to recompute : state is unchanged
-		
+
 		r.state.c = 100 // changing state, but prop "c" is not a dependency of "sum"
 
 		expect(r.getters.sum).toBe(55 + 25)
 		expect(nComputed).toBe(2) // "sum" has not been recomputed
 	})
-	
+
 	it('deep state : check if reactivity goes deep inside state', function () {
 		const state = {
 			a: 10,
@@ -81,15 +81,15 @@ describe('Reactor', function () {
 		const getters = {
 			prod: state => state.c.x * state.c.y
 		}
-		
+
 		const r = new Reactor({ state, getters })
-		
+
 		expect(r.getters.prod).toBe(5 * 6)
 		r.state.c.y = 10
 
 		expect(r.getters.prod).toBe(5 * 10)
 	})
-	
+
 	it('what if a getter is not a function', function () {
 		const state = {
 			a: [10, 20, 30]
@@ -99,7 +99,7 @@ describe('Reactor', function () {
 			// array sum is not a function !
 			arraySum: state.a.reduce((prev, curr) => curr + prev, 0)
 		}
-		
+
 		expect(() => {
 			const r = new Reactor({ state, getters })
 		}).toThrow(new TypeError('Getter "arraySum" must be a function ; "number" was given.'))
@@ -112,9 +112,9 @@ describe('Reactor', function () {
 		const getters = {
 			arraySum: state => state.a.reduce((prev, curr) => curr + prev, 0)
 		}
-		
+
 		const r = new Reactor({ state, getters })
-		
+
 		// origianl sum
 		expect(r.getters.arraySum).toBe(60)
 
@@ -130,13 +130,13 @@ describe('Reactor', function () {
 		expect(n).toBe(10)
 		expect(r.getters.arraySum).toBe(90)
 	})
-	
+
 	it('managing array of objects', function () {
 		// starting with no item
 		const state = {
 			a: []
 		}
-		
+
 		const getters = {
 			count: state => state.a.slice(0).length, // length is not reactive at the moment
 			render: (s, g) => {
@@ -149,11 +149,11 @@ describe('Reactor', function () {
 			},
 			names: s => s.a.map(e => e.name).join(', ')
 		}
-		
+
 		const r = new Reactor({ state, getters })
 		expect(r.getters.count).toBe(0)
 		expect(r.getters.render).toBe('0 people : .')
-		
+
 		// adding a person
 		r.state.a.push({
 			name: 'The Deep',
@@ -171,16 +171,16 @@ describe('Reactor', function () {
 		expect(r.getters.count).toBe(4)
 		expect(r.getters.render).toBe('4 people : The Deep is born in 1985 ; Starlight is born in 1994 ; Queen Maeve is born in 1986 ; Stormfront is born in 1919.')
 		expect(r.getters.names).toBe('The Deep, Starlight, Queen Maeve, Stormfront')
-		
+
 		// sorting by year
 		r.state.a.sort((a, b) => a.year - b.year)
 		expect(r.getters.names).toBe('Stormfront, The Deep, Queen Maeve, Starlight')
-		
+
 		// sorting by name
 		r.state.a.sort((a, b) => a.name.localeCompare(b.name))
 		expect(r.getters.names).toBe('Queen Maeve, Starlight, Stormfront, The Deep')
 	})
-	
+
 	it('deals with in operator and property deletion', function () {
 		const state = {
 			x: {
@@ -199,7 +199,7 @@ describe('Reactor', function () {
 		r.state.x.neutral = true
 		expect(r.getters.hasNeutralProperty).toBeTruthy()
 	})
-	
+
 	it('deals with a slightly more complex state', function () {
 		const state = {
 			equip: {
@@ -267,21 +267,21 @@ describe('Reactor', function () {
 			}
 		}
 		expect(getters.getAC(state)).toBe(8)
-		
+
 		// put in Reactor
-		
+
 		const r = new Reactor({ state, getters })
 		expect(r.getters.getAC).toBe(8)
-		
+
 		// let's add a shield penalty
 		r.state.equip.shield.effects.push({
 			type: 'bonus',
 			ability: 'armor',
-			value: -1 
+			value: -1
 		})
 		expect(r.getters.getAC).toBe(7)
 	})
-	
+
 	it('using $length reactive property', function () {
 		const state = {
 			a: []
@@ -289,10 +289,10 @@ describe('Reactor', function () {
 		const getters = {
 			// this getter uses "length" property
 			render_1: state => 'there ' + (state.a.length > 1 ? 'are' : 'is') + ' ' + state.a.length + ' item' + (state.a.length > 1 ? 's' : '') + '.',
-			
+
 			// this getter uses "$length" custom property (only available thru Reactor Class)
 			// "$length" is a reactive alias of "length"
-			render_2: state => 'there ' + (state.a.$length > 1 ? 'are' : 'is') + ' ' + state.a.$length + ' item' + (state.a.$length > 1 ? 's' : '') + '.' 
+			render_2: state => 'there ' + (state.a.$length > 1 ? 'are' : 'is') + ' ' + state.a.$length + ' item' + (state.a.$length > 1 ? 's' : '') + '.'
 		}
 		const r = new Reactor({ state, getters })
 		expect(r.getters.render_1).toBe('there is 0 item.')
@@ -303,12 +303,12 @@ describe('Reactor', function () {
 		// .length is NOT reactive
 		// so the getter "render_1" will not be updated
 		expect(r.getters.render_1).toBe('there is 0 item.') // still the old value of length
-		
+
 		// on the other hand, .$length is reactive
-		// the getter "render_2" will be updated with the new length value 
+		// the getter "render_2" will be updated with the new length value
 		expect(r.getters.render_2).toBe('there are 3 items.')
 	})
-	
+
 	it('mutations basic testing', function () {
 		const store = {
 			state: {
@@ -353,7 +353,7 @@ describe('Reactor', function () {
 		// [10, 20 + 10, 30 + 10 + 20 + 10] : sum (10) + (30) + (70) = 110
 		expect(r.getters.sum).toBe(110)
 	})
-	
+
 	it('new item are reactive', function () {
 		const store = {
 			state: {
@@ -383,8 +383,8 @@ describe('Reactor', function () {
 		r.state.a[0].x = 100
 		expect(r.getters.sumX).toBe(105)
 	})
-	
-	
+
+
 	it('detecting proxified items', function () {
 		const store = {
 			state: {
@@ -412,7 +412,7 @@ describe('Reactor', function () {
 		expect(r.isReactive(store.state.b.i1)).toBeFalsy()
 		expect(r.isReactive(r.state.b.i1)).toBeTruthy()
 	})
-	
+
 	it('by the way : testing proxy and symbol', function () {
 		const a = { x: 1 }
 		const sym = Symbol('PROX')
@@ -428,7 +428,7 @@ describe('Reactor', function () {
 		expect(a[sym]).toBeFalsy()
 		expect(b[sym]).toBeTruthy()
 	})
-	
+
 	it('filter which have enough points', function () {
 		const store = {
 			state: {
@@ -505,4 +505,57 @@ describe('Reactor', function () {
 		oSkillDT.value = 10
 		expect(r.getters.numOfSuchCharacters).toBe(3)
 	})
+
+  it('states with circular reference during runtime', function () {
+    const ent1 = {
+      target: null,
+      id: 1,
+      name: 'cloud strife'
+    }
+    const ent2 = {
+      target: ent1,
+      id: 2,
+      name: 'tifa lockheart'
+    }
+    const state = {
+      entities: [
+        ent1,
+        ent2
+      ]
+    }
+    const getters = {
+      getEntityTargetList: state => state.entities.map(e => e.name + ' targets ' + (e.target ? e.target.name : 'nobody'))
+    }
+    const r = new Reactor({ state, getters })
+    expect(r.getters.getEntityTargetList[0]).toBe('cloud strife targets nobody')
+    expect(r.getters.getEntityTargetList[1]).toBe('tifa lockheart targets cloud strife')
+    r.state.entities[0].target = ent2
+    expect(r.getters.getEntityTargetList[0]).toBe('cloud strife targets tifa lockheart')
+  })
+
+  it('states with circular reference in store definition', function () {
+    const ent1 = {
+      target: null,
+      id: 1,
+      name: 'cloud strife'
+    }
+    const ent2 = {
+      target: ent1,
+      id: 2,
+      name: 'tifa lockheart'
+    }
+    ent1.target = ent2
+    const state = {
+      entities: [
+        ent1,
+        ent2
+      ]
+    }
+    const getters = {
+      getEntityTargetList: state => state.entities.map(e => e.name + ' targets ' + (e.target ? e.target.name : 'nobody'))
+    }
+    expect(() => {
+      new Reactor({ state, getters })
+    }).toThrow(new RangeError('Maximum call stack size exceeded'))
+  })
 })

@@ -265,6 +265,9 @@ class Reactor {
    * @returns {Proxy}
    */
   proxifyObject (oTarget) {
+    if (this.isReactive(oTarget)) {
+      return oTarget
+    }
     const oClone = {}
     this.iterate(oTarget, (value, key) => {
       oClone[key] = this.proxify(value)
