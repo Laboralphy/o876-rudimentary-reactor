@@ -321,13 +321,11 @@ class Reactor {
   }
 
   defineMutation (name, mutation) {
-    this._mutations[name] = payload => {
-      mutation({
-        state: this.state,
-        getters: this.getters,
-        mutations: this.mutations
-      }, payload)
-    }
+    this._mutations[name] = payload => mutation({
+      state: this.state,
+      getters: this.getters,
+      mutations: this.mutations
+    }, payload)
   }
 
   /**
