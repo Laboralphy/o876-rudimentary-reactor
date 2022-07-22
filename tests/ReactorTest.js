@@ -556,6 +556,61 @@ describe('Reactor', function () {
     }
     expect(() => {
       new Reactor({ state, getters })
-    }).toThrow(new RangeError('Maximum call stack size exceeded'))
+    }).not.toThrow(new RangeError('Maximum call stack size exceeded'))
+  })
+
+  it('Reactor TestCase #1', function () {
+
+    const state = {
+      books: [
+        {
+          id: 1,
+          title: '20,000 leagues under seas',
+          author: 'Jules Vernes',
+          year: 1870
+        },
+        {
+          id: 2,
+          title: 'Connan of cimmeria',
+          author: 'Robert E. Howard',
+          year: 1932
+        }
+      ]
+    }
+
+    const getters = {
+      getMaxId: state => state.books.reduce((prev, curr) => Math.max(prev, curr.id), -Infinity),
+      getBooksOf20thCentury: state => state.books.filter(b => b.year >= 1900)
+    }
+
+    const mutations = {
+      addBook: ({ state, getters }, { title, author, year }) => {
+        state.books.push({
+          id: getters.getMaxId + 1,
+          title,
+          author,
+          year
+        })
+      },
+      deleteBook: ({ state }, { id }) => {
+        // search for book index in array
+        const nBookIndex = state.books.findIndex(book => id === book.id)
+        state.books.splice(nBookIndex, 1) // remove book from list
+      }
+    }
+
+    const r = new Reactor({ state, getters, mutations })
+    expect(r.getters.getMaxId).toBe(2) // prints "2"
+    expect(r.getters.getBooksOf20thCentury
+      .map(({ title }) => title)
+      .sort())
+      .toEqual([ "Connan of cimmeria" ])
+
+    r.mutations.addBook({ title: 'The Colour of Magic', author: 'Terry Pratchett', year: 1983 })
+    expect(r.getters.getBooksOf20thCentury
+      .map(({ title }) => title)
+      .sort())
+      .toEqual([ "Connan of cimmeria", "The Colour of Magic" ])
   })
 })
+

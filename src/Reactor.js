@@ -3,13 +3,15 @@
  * as it is described at : https://v3.vuejs.org/guide/reactivity.html
  * @author Raphaël Marandet
  * @date 2021-07-29
+ *
+ * read README.md for "how to use"
  */
 
 /**
  * these are the Array methods that are to be tracked in order to
  * maintain reactivity
  */
-const ARRAY_TRACKED_METHODS = [
+const ARRAY_TRACKED_METHODS = filterArrayFunction([
   'entries',
   'every',
   'filter',
@@ -29,26 +31,39 @@ const ARRAY_TRACKED_METHODS = [
   'toLocaleString',
   'toString',
   'values'
-]
+])
 
 /**
  * these Array methods triggers cache invalidation on dependent getters
  */
-const ARRAY_TRIGGERED_METHODS = [
-  'fill',
+const ARRAY_TRIGGERED_METHODS = filterArrayFunction([
   'copyWithin',
-  'splice',
+  'fill',
+  'flat',
+  'flatMap',
   'push',
   'pop',
+  'reverse',
   'shift',
   'sort',
-  'unshift',
-  'reverse'
-]
+  'splice',
+  'unshift'
+])
 
 const REACTOR_NAMESPACE = '**O876_REACTOR_NS**'
 const IS_PROXY = REACTOR_NAMESPACE + 'IS_PROXY'
+const IS_PROCESSING = REACTOR_NAMESPACE + 'IS_PROCESSING'
 const SYMBOL_PROXY = Symbol(IS_PROXY)
+const SYMBOL_PROCESSING = Symbol(IS_PROCESSING)
+
+/**
+ * Given an array of strings, return another array where all each matches an array prototype method
+ * @param a {string[]}
+ * @returns {string[]}
+ */
+function filterArrayFunction (a) {
+  return a.filter(m => m in Array.prototype)
+}
 
 /**
  * Instances of classe Reactor provide two properties :
@@ -198,6 +213,7 @@ class Reactor {
     this.iterate(this._getters, g => {
       const gns = g[REACTOR_NAMESPACE]
       if (this.findDependency(gns._depreg, target, property)) {
+        this.trigger(gns, '_cache')
         gns._invalidCache = true
       }
     })
@@ -205,7 +221,7 @@ class Reactor {
 
   getType (x) {
     const sType = typeof x
-    switch (sType) {
+    switch (sType.toLowerCase()) {
       case 'object':
         if (x === null) {
           return 'null'
@@ -265,9 +281,10 @@ class Reactor {
    * @returns {Proxy}
    */
   proxifyObject (oTarget) {
-    if (this.isReactive(oTarget)) {
+    if (this.isReactive(oTarget) || oTarget[SYMBOL_PROCESSING]) {
       return oTarget
     }
+    oTarget[SYMBOL_PROCESSING] = true
     const oClone = {}
     this.iterate(oTarget, (value, key) => {
       oClone[key] = this.proxify(value)
@@ -336,6 +353,7 @@ class Reactor {
   runGetter (name) {
     const getter = this._getters[name]
     const gns = getter[REACTOR_NAMESPACE]
+    this.track(gns, '_cache')
     if (!gns._invalidCache) {
       return gns._cache
     }

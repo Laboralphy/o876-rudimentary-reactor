@@ -1,6 +1,6 @@
 {
   "name": "o876-rudimentary-reactor",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A rudimentary implementation of Vue.js reactivity",
   "main": "index.js",
   "directories": {
