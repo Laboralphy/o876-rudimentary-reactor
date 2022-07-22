@@ -1,7 +1,7 @@
 {
-  "name": "o876-rudimentary-reactor",
-  "version": "1.0.1",
-  "description": "A rudimentary implementation of Vue.js reactivity",
+  "name": "@laboralphy/store",
+  "version": "1.0.2",
+  "description": "A rudimentary store manager, inspired by Vue.js reactivity",
   "main": "index.js",
   "directories": {
     "test": "tests"

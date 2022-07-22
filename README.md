@@ -1,9 +1,12 @@
-# o876-rudimentary-reactor
-A reactive store base on Vue.js reactivity :
+# Laboralphy store manager
+A store manager base on Vue.js reactivity :
 https://v3.vuejs.org/guide/reactivity.html
 
+However this is not a copy/paste of the article.
+And the article has been updated many times since 2021.
+
 ## Description
-This is a rudimentary reactive state manager supporting :
+This is a rudimentary store manager supporting :
 - State
 - Getters
 - Mutations
