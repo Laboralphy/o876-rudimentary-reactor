@@ -75,16 +75,18 @@ function filterArrayFunction (a) {
 class Reactor {
   /**
    *
-   * @param state
-   * @param getters
-   * @param mutations
+   * @param state {object} state
+   * @param getters {object} all getters
+   * @param mutations {object} all mutations
+   * @param externals {object} an objet containing non-reactive properties
    * @returns {boolean|any}
    */
-  constructor ({ state, getters, mutations = {} }) {
+  constructor ({ state, getters, mutations = {}, externals = {} }) {
     this._runningEffects = []
     this._getters = {}
     this._getterProxies = {}
     this._mutations = {}
+    this._externals = externals
     const track = this.track.bind(this)
     const trigger = this.trigger.bind(this)
     const proxify = target => {
@@ -144,6 +146,10 @@ class Reactor {
 
   get mutations () {
     return this._mutations
+  }
+
+  get externals () {
+    return this._externals
   }
 
   /**
@@ -341,7 +347,8 @@ class Reactor {
     this._mutations[name] = payload => mutation({
       state: this.state,
       getters: this.getters,
-      mutations: this.mutations
+      mutations: this.mutations,
+      externals: this.externals
     }, payload)
   }
 
@@ -358,7 +365,7 @@ class Reactor {
       return gns._cache
     }
     const pEffect = () => {
-      gns._cache = getter(this._state, this.getters)
+      gns._cache = getter(this._state, this.getters, this.externals)
       gns._invalidCache = false
     }
     pEffect._depreg = gns._depreg = []
