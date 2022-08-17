@@ -50,6 +50,8 @@ const ARRAY_TRIGGERED_METHODS = filterArrayFunction([
   'unshift'
 ])
 
+const Events = require('events')
+
 const REACTOR_NAMESPACE = '**O876_REACTOR_NS**'
 const IS_PROXY = REACTOR_NAMESPACE + 'IS_PROXY'
 const IS_PROCESSING = REACTOR_NAMESPACE + 'IS_PROCESSING'
@@ -87,6 +89,7 @@ class Reactor {
     this._getterProxies = {}
     this._mutations = {}
     this._externals = externals
+    this._events = new Events()
     const track = this.track.bind(this)
     const trigger = this.trigger.bind(this)
     const proxify = target => {
@@ -134,6 +137,10 @@ class Reactor {
 
   isReactive (oTarget) {
     return oTarget[SYMBOL_PROXY]
+  }
+
+  get events () {
+    return this._events
   }
 
   get state () {
@@ -344,12 +351,19 @@ class Reactor {
   }
 
   defineMutation (name, mutation) {
-    this._mutations[name] = payload => mutation({
-      state: this.state,
-      getters: this.getters,
-      mutations: this.mutations,
-      externals: this.externals
-    }, payload)
+    this._mutations[name] = payload => {
+      const result = mutation({
+        state: this.state,
+        getters: this.getters,
+        mutations: this.mutations,
+        externals: this.externals
+      }, payload)
+      this._events.emit('mutation', {
+        name,
+        payload
+      })
+      return result
+    }
   }
 
   /**

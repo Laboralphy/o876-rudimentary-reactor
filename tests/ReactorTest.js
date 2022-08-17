@@ -612,5 +612,27 @@ describe('Reactor', function () {
       .sort())
       .toEqual([ "Connan of cimmeria", "The Colour of Magic" ])
   })
+
+  it('events', function () {
+    const state = {
+      x: 1
+    }
+    const mutations = {
+      setX: ({ state }, { value }) => {
+        state.x = value
+      }
+    }
+    const r = new Reactor({
+      state, mutations
+    })
+    const aLog = []
+    r.events.on('mutation', ({ name, payload }) => {
+      aLog.push({ name, payload })
+    })
+    r.mutations.setX({ value: 22 })
+    r.mutations.setX({ value: 18 })
+    expect(aLog).toEqual([{name: 'setX', payload: {value: 22}}, {name: 'setX', payload: {value: 18}}])
+    expect(r.state.x).toBe(18)
+  })
 })
 
