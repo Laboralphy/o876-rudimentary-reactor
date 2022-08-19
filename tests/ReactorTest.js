@@ -636,3 +636,21 @@ describe('Reactor', function () {
   })
 })
 
+describe('bug getters return array at root of state', function () {
+  it('returns array', function () {
+    const s = new Reactor({
+      state: {
+        effects: []
+      },
+      getters: {
+        getEffects: state => state.effects
+      },
+      mutations: {
+        addEffect: ({ state }, { effect }) => state.effects.push(effect)
+      }
+    })
+    expect(s.getters.getEffects).toHaveSize(0)
+    s.mutations.addEffect({ effect: { tag: 'X' }})
+    expect(s.getters.getEffects).toHaveSize(1)
+  })
+})
