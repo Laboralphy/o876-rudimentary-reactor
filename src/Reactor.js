@@ -105,8 +105,11 @@ class Reactor {
         return Reflect.get(target, property, receiver)
       },
       set (target, property, value, receiver) {
+        if (value === target[property]) {
+          return
+        }
         trigger(target, property)
-        if (typeof target[property] === 'object') {
+        if (typeof value === 'object') {
           value = proxify(value)
         }
         return Reflect.set(target, property, value, receiver)
