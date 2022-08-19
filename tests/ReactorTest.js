@@ -653,4 +653,78 @@ describe('bug getters return array at root of state', function () {
     s.mutations.addEffect({ effect: { tag: 'X' }})
     expect(s.getters.getEffects).toHaveSize(1)
   })
+  it('how cache works', function () {
+    const s = new Reactor({
+      state: {
+        effects: []
+      },
+      getters: {
+        getEffects: state => state.effects
+      },
+      mutations: {
+        addEffect: ({ state }, { effect }) => state.effects.push(effect)
+      }
+    })
+    expect(s.getters.getEffects).toHaveSize(0)
+    s.mutations.addEffect({ effect: { tag: 'X' }})
+    expect(s.getters.getEffects).toHaveSize(1)
+    s.mutations.addEffect({ effect: { tag: 'Y' }})
+    expect(s.getters.getEffects).toHaveSize(2)
+    expect(s.getters.getEffects).toHaveSize(2)
+    expect(s.getters.getEffects).toHaveSize(2)
+    expect(s.getters.getEffects).toHaveSize(2)
+    expect(s.getters.getEffects).toHaveSize(2)
+    expect(s.getters.getEffects).toHaveSize(2)
+    s.mutations.addEffect({ effect: { tag: 'Y' }})
+    expect(s.getters.getEffects).toHaveSize(3)
+  })
+  it('double use of getters', function () {
+    const s = new Reactor({
+      state: {
+        effects: []
+      },
+      getters: {
+        getEffects: state => state.effects,
+        isThereAnX: (state, getters) => {
+          return !!getters.getEffects.find(e => e.tag === 'X')
+        }
+      },
+      mutations: {
+        addEffect: ({ state }, { effect }) => state.effects.push(effect)
+      }
+    })
+    s.mutations.addEffect({ effect: { tag: 'A' }})
+    expect(s.getters.isThereAnX).toBeFalse()
+    s.mutations.addEffect({ effect: { tag: 'X' }})
+    expect(s.getters.isThereAnX).toBeTrue()
+  })
+  it('mise en evidence du probleme des getter réutilisé', function () {
+    const getters = {
+      getEffects: state => state.effects,
+      isThereAnX: (state, getters) => {
+        return !!getters.getEffects.find(e => e.tag === 'X')
+      }
+    }
+    const mutations = {
+      addEffect: ({ state }, { effect }) => state.effects.push(effect)
+    }
+    const s1 = new Reactor({
+      state: {
+        effects: []
+      },
+      getters,
+      mutations
+    })
+    const s2 = new Reactor({
+      state: {
+        effects: []
+      },
+      getters,
+      mutations
+    })
+    s1.mutations.addEffect({ effect: { tag: 'A' }})
+    expect(s1.getters.isThereAnX).toBeFalse()
+    s2.mutations.addEffect({ effect: { tag: 'X' }})
+    expect(s2.getters.isThereAnX).toBeTrue()
+  })
 })

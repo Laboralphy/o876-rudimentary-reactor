@@ -86,6 +86,7 @@ class Reactor {
   constructor ({ state, getters, mutations = {}, externals = {} }) {
     this._runningEffects = []
     this._getters = {}
+    this._getterData = {}
     this._getterProxies = {}
     this._mutations = {}
     this._externals = externals
@@ -196,7 +197,8 @@ class Reactor {
    * @return {boolean}
    */
   findDependency (registry, target, property) {
-    return !!registry.find(tp => tp.target === target && tp.property === property)
+    return (property in registry) && registry[property].indexOf(target) >= 0
+    // !!registry.find(tp => tp.target === target && tp.property === property)
   }
 
   /**
@@ -210,7 +212,10 @@ class Reactor {
     this._runningEffects.forEach(re => {
       const d = re._depreg
       if (!this.findDependency(d, target, property)) {
-        d.push({ target, property })
+        if (!(property in d)) {
+          d[property] = []
+        }
+        d[property].push(target)
       }
     })
   }
@@ -223,8 +228,9 @@ class Reactor {
    */
   trigger (target, property) {
     // invalidate cache for all getters having target/property
-    this.iterate(this._getters, g => {
-      const gns = g[REACTOR_NAMESPACE]
+    const gd = this._getterData
+    this.iterate(this._getters, (g, name) => {
+      const gns = gd[name]
       if (this.findDependency(gns._depreg, target, property)) {
         this.trigger(gns, '_cache')
         gns._invalidCache = true
@@ -334,11 +340,11 @@ class Reactor {
       throw new TypeError(`Getter "${name}" must be a function ; "${sGetterType}" was given.`)
     }
     this._getters[name] = getter
-    getter[REACTOR_NAMESPACE] = {
+    this._getterData[name] = {
       _cache: undefined,
       _invalidCache: true,
       _name: name,
-      _depreg: []
+      _depreg: {}
     }
     Object.defineProperty(
       this._getterProxies,
@@ -373,7 +379,7 @@ class Reactor {
    */
   runGetter (name) {
     const getter = this._getters[name]
-    const gns = getter[REACTOR_NAMESPACE]
+    const gns = this._getterData[name]
     this.track(gns, '_cache')
     if (!gns._invalidCache) {
       return gns._cache
@@ -382,7 +388,7 @@ class Reactor {
       gns._cache = getter(this._state, this.getters, this.externals)
       gns._invalidCache = false
     }
-    pEffect._depreg = gns._depreg = []
+    pEffect._depreg = gns._depreg = {}
     this.createEffect(pEffect)
     return gns._cache
   }
