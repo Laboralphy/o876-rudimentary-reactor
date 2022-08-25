@@ -201,7 +201,6 @@ class Reactor {
    */
   findDependency (registry, target, property) {
     return (property in registry) && registry[property].indexOf(target) >= 0
-    // !!registry.find(tp => tp.target === target && tp.property === property)
   }
 
   /**
@@ -364,7 +363,6 @@ class Reactor {
       const result = mutation({
         state: this.state,
         getters: this.getters,
-        mutations: this.mutations,
         externals: this.externals
       }, payload)
       this._events.emit('mutation', {
