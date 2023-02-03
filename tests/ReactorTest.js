@@ -728,3 +728,58 @@ describe('bug getters return array at root of state', function () {
     expect(s2.getters.isThereAnX).toBeTrue()
   })
 })
+
+describe('erreur array', function () {
+  it('should update getter when getter is dependent on two array getter', function () {
+    const state = {
+      properties: [],
+      equipement: {
+        slot1: null,
+        slot2: null,
+        slot3: null,
+        slot4: null,
+        slot5: null,
+        slot6: null
+      }
+    }
+    const getEquipment = state => state.equipement
+    const getOffEquipmentList = (state, getters) => {
+      const e = getters.getEquipment
+      return 'slot1 slot2 slot3'
+        .split(' ')
+        .filter(s => !!e[s])
+    }
+    const getEquipmentProperties = (state, getters) => {
+      return getters.getOffEquipmentList.map(e => ({
+          ...e.properties,
+          ref: 'x'
+        }))
+        .flat()
+    }
+    const getInnateProperties = state => state.properties
+    const getAllProperties = (state, getters) => getters.getInnateProperties.concat(getters.getEquipmentProperties)
+    const getters = {
+      getAllProperties,
+      getInnateProperties,
+      getEquipmentProperties,
+      getOffEquipmentList,
+      getEquipment
+    }
+    const store = new Reactor({
+      state, getters
+    })
+    expect(store.getters.getAllProperties.length).toBe(0)
+    store.state.properties.push({
+      a: 1
+    })
+    expect(store.getters.getInnateProperties.length).toBe(1)
+    expect(store.getters.getInnateProperties.concat(store.getters.getEquipmentProperties).length).toBe(1)
+    expect(store.getters.getAllProperties.length).toBe(1)
+    store.state.equipement.slot1 = {
+      a: 2
+    }
+    expect(store.getters.getInnateProperties.length).toBe(1)
+    expect(store.getters.getInnateProperties.concat(store.getters.getEquipmentProperties).length).toBe(2)
+    expect(store.getters.getAllProperties.length).toBe(2)
+  })
+})

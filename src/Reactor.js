@@ -12,11 +12,15 @@
  * maintain reactivity
  */
 const ARRAY_TRACKED_METHODS = filterArrayFunction([
+  'at',
+  'concat',
   'entries',
   'every',
   'filter',
   'find',
   'findIndex',
+  'flat',
+  'flatMap',
   'forEach',
   'includes',
   'indexOf',
@@ -39,8 +43,6 @@ const ARRAY_TRACKED_METHODS = filterArrayFunction([
 const ARRAY_TRIGGERED_METHODS = filterArrayFunction([
   'copyWithin',
   'fill',
-  'flat',
-  'flatMap',
   'push',
   'pop',
   'reverse',
@@ -130,6 +132,10 @@ class Reactor {
     this.iterate(mutations, (m, name) => {
       this.defineMutation(name, m)
     })
+  }
+
+  static get getUnsupportedArrayMethods () {
+
   }
 
   createProxy (oTarget) {
