@@ -177,8 +177,13 @@ class Reactor {
   createEffect (fn) {
     const effect = () => {
       this._runningEffects.push(effect)
-      fn()
-      this._runningEffects.pop()
+      try {
+        fn()
+      } catch (e) {
+        throw e
+      } finally {
+        this._runningEffects.pop()
+      }
     }
     effect._depreg = fn._depreg
     effect()
