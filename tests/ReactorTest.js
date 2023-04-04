@@ -783,3 +783,25 @@ describe('erreur array', function () {
     expect(store.getters.getAllProperties.length).toBe(2)
   })
 })
+
+describe('erreur affectation de valeur nulle', function () {
+  it('should be ok when assigning null', function () {
+    const state = {
+      d1: { x: 1 }
+    }
+    const getters = {
+      get2X: state => state.d1.x ? 2 * state.d1.x : 0
+    }
+    const store = new Reactor({
+      state, getters
+    })
+    expect(store.state.d1.x).toBe(1)
+    expect(store.getters.get2X).toBe(2)
+    store.state.d1.x = null
+    expect(store.state.d1.x).toBe(null)
+    expect(store.getters.get2X).toBe(0)
+    store.state.d1.x = 10
+    expect(store.state.d1.x).toBe(10)
+    expect(store.getters.get2X).toBe(20)
+  })
+})
