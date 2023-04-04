@@ -146,7 +146,7 @@ class Reactor {
   }
 
   isReactive (oTarget) {
-    return oTarget[SYMBOL_PROXY]
+    return oTarget === null || oTarget === undefined || oTarget[SYMBOL_PROXY]
   }
 
   get events () {
