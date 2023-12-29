@@ -56,9 +56,7 @@ const Events = require('events')
 
 const REACTOR_NAMESPACE = '**O876_REACTOR_NS**'
 const IS_PROXY = REACTOR_NAMESPACE + 'IS_PROXY'
-const IS_PROCESSING = REACTOR_NAMESPACE + 'IS_PROCESSING'
 const SYMBOL_PROXY = Symbol(IS_PROXY)
-const SYMBOL_PROCESSING = Symbol(IS_PROCESSING)
 
 /**
  * Given an array of strings, return another array where all each matches an array prototype method
@@ -86,6 +84,7 @@ class Reactor {
    * @returns {boolean|any}
    */
   constructor ({ state, getters, mutations = {}, externals = {} }) {
+    this._proxyId = 1
     this._runningEffects = []
     this._getters = {}
     this._getterData = {}
@@ -135,7 +134,7 @@ class Reactor {
   }
 
   static get getUnsupportedArrayMethods () {
-
+    return []
   }
 
   createProxy (oTarget) {
@@ -146,7 +145,7 @@ class Reactor {
   }
 
   isReactive (oTarget) {
-    return oTarget === null || oTarget === undefined || oTarget[SYMBOL_PROXY]
+    return oTarget === null || oTarget === undefined || !!oTarget[SYMBOL_PROXY]
   }
 
   get events () {
@@ -195,23 +194,24 @@ class Reactor {
    * @param f {function} function called back for each object property
    */
   iterate (oObject, f) {
-    for (const x in oObject) {
-      if (Object.prototype.hasOwnProperty.call(oObject, x)) {
-        f(oObject[x], x, oObject)
-      }
+    if (!oObject) {
+      return
+    }
+    for (const [x, ox] of Object.entries(oObject)) {
+      f(ox, x, oObject)
     }
   }
 
   /**
    * returns true if a target/property is registred as a dependency
    * of the specified getter
-   * @param registry {array} list of dependencies
+   * @param depreg {Object<string, object[]>} list of dependencies
    * @param target {object} an object
    * @param property {string} property name
    * @return {boolean}
    */
-  findDependency (registry, target, property) {
-    return (property in registry) && registry[property].indexOf(target) >= 0
+  findDependency (depreg, target, property) {
+    return depreg[property]?.indexOf(target) >= 0
   }
 
   /**
@@ -313,20 +313,22 @@ class Reactor {
    * @returns {Proxy}
    */
   proxifyObject (oTarget) {
-    if (this.isReactive(oTarget) || oTarget[SYMBOL_PROCESSING]) {
+    if (this.isReactive(oTarget)) {
       return oTarget
     }
-    oTarget[SYMBOL_PROCESSING] = true
+    oTarget[SYMBOL_PROXY] = ++this._proxyId
     const oClone = {}
     this.iterate(oTarget, (value, key) => {
-      oClone[key] = this.proxify(value)
+      if (key !== SYMBOL_PROXY) {
+        oClone[key] = this.proxify(value)
+      }
     })
     return this.createProxy(oClone)
   }
 
   /**
    * Installs a proxy on an object to make it reactive
-   * @param target {object}
+   * @param target {object|[]}
    * @param name {string}
    */
   proxify (target, name = undefined) {

@@ -409,7 +409,7 @@ describe('Reactor', function () {
 		const r = new Reactor(store)
 		const i1 = r.getters.bp.i1
 		expect(r.isReactive(i1)).toBeTruthy()
-		expect(r.isReactive(store.state.b.i1)).toBeFalsy()
+		expect(r.isReactive(store.state.b.i1)).toBeTrue()
 		expect(r.isReactive(r.state.b.i1)).toBeTruthy()
 	})
 
