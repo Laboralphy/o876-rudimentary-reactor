@@ -211,7 +211,7 @@ class Reactor {
    * @return {boolean}
    */
   findDependency (depreg, target, property) {
-    return depreg[property]?.indexOf(target) >= 0
+    return (property in depreg) && (depreg[property]?.indexOf(target) >= 0)
   }
 
   /**
