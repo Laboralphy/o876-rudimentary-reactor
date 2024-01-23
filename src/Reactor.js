@@ -211,7 +211,7 @@ class Reactor {
    * @return {boolean}
    */
   findDependency (depreg, target, property) {
-    return (property in depreg) && (depreg[property]?.indexOf(target) >= 0)
+    return (property in depreg) && (depreg[property].indexOf(target) >= 0)
   }
 
   /**
@@ -221,6 +221,9 @@ class Reactor {
    * @param property {string} name of the property that is accessed
    */
   track (target, property) {
+    if (this.getType(target[property]) === 'function') {
+      return
+    }
     // all runningEffects receive target/prop
     this._runningEffects.forEach(re => {
       const d = re._depreg
@@ -350,7 +353,7 @@ class Reactor {
    * @param getter {string} getter function
    */
   defineGetter (name, getter) {
-    const sGetterType = typeof getter
+    const sGetterType = this.getType(getter)
     if (sGetterType !== 'function') {
       throw new TypeError(`Getter "${name}" must be a function ; "${sGetterType}" was given.`)
     }

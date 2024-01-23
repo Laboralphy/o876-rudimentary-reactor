@@ -805,3 +805,26 @@ describe('erreur affectation de valeur nulle', function () {
     expect(store.getters.get2X).toBe(20)
   })
 })
+
+describe('bug array access', function () {
+  it ('should work fine when accessing array and mapping on it', function () {
+    const state = {
+      feats: []
+    }
+    const getters = {
+      getFeatReport: function (state) {
+        const aFeats = state.feats
+        return aFeats.map(f => {
+          return {
+            name: f,
+            len: f.length
+          }
+        })
+      }
+    }
+    const store = new Reactor({
+      state, getters
+    })
+    expect(store.getters.getFeatReport).toEqual([])
+  })
+})
