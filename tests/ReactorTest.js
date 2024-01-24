@@ -851,4 +851,22 @@ describe('bug array access', function () {
     expect(() => store.mutations.pushItem({ item: 'test' })).not.toThrow()
     expect(store.state.feats).toEqual(['xxx', 'test'])
   })
+
+  it('should respect object resemblance', function () {
+    const state = {
+      eq: {}
+    }
+    const mutations = {
+      equip: function ({ state }, { slot, item }) {
+        state.eq[slot] = item
+      }
+    }
+    const store = new Reactor({ state, mutations })
+    const w = {
+      name: 'sword',
+      damage: 8
+    }
+    store.mutations.equip({ slot: 'weapon', item: w })
+    expect(store.state.eq.weapon).toEqual({ name: 'sword', damage: 8 })
+  })
 })

@@ -99,7 +99,7 @@ class Reactor {
     this._handler = {
       get (target, property, receiver) {
         if (property === SYMBOL_PROXY) {
-          return true
+          return target[SYMBOL_PROXY] || true
         }
         track(target, property)
         return Reflect.get(target, property, receiver)
