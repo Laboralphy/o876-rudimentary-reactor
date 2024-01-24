@@ -149,6 +149,10 @@ class Reactor {
     })
   }
 
+  static get SYMBOL_PROXY () {
+    return SYMBOL_PROXY
+  }
+
   static get getUnsupportedArrayMethods () {
     return []
   }
@@ -335,7 +339,12 @@ class Reactor {
     if (this.isReactive(oTarget)) {
       return oTarget
     }
-    oTarget[SYMBOL_PROXY] = ++this._proxyId
+    Object.defineProperty(oTarget, SYMBOL_PROXY, {
+      value: ++this._proxyId,
+      writable: false,
+      configurable: false,
+      enumerable: false
+    })
     const oClone = {}
     this.iterate(oTarget, (value, key) => {
       if (key !== SYMBOL_PROXY) {

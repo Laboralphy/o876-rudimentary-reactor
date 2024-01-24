@@ -854,19 +854,27 @@ describe('bug array access', function () {
 
   it('should respect object resemblance', function () {
     const state = {
-      eq: {}
+      eq: {},
+      slot: 'weapon'
     }
     const mutations = {
       equip: function ({ state }, { slot, item }) {
         state.eq[slot] = item
       }
     }
-    const store = new Reactor({ state, mutations })
+    const getters = {
+      getWeaponSlot: function (state) {
+        return state.eq[state.slot]
+      }
+    }
+    const store = new Reactor({ state, mutations, getters })
     const w = {
       name: 'sword',
       damage: 8
     }
     store.mutations.equip({ slot: 'weapon', item: w })
-    expect(store.state.eq.weapon).toEqual({ name: 'sword', damage: 8 })
+    store.mutations.equip({ slot: 'weapon', item: store.getters.getWeaponSlot })
+    expect(store.getters.getWeaponSlot).toEqual({ name: 'sword', damage: 8 })
+    expect(store.isReactive(store.getters.getWeaponSlot)).toBeTrue()
   })
 })
