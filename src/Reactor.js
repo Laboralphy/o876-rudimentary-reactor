@@ -339,6 +339,7 @@ class Reactor {
     if (this.isReactive(oTarget)) {
       return oTarget
     }
+    oTarget[SYMBOL_PROXY] = ++this._proxyId
     Object.defineProperty(oTarget, SYMBOL_PROXY, {
       value: ++this._proxyId,
       writable: false,
