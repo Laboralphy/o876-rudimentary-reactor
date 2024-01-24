@@ -94,9 +94,8 @@ class Reactor {
     this._events = new Events()
     const track = this.track.bind(this)
     const trigger = this.trigger.bind(this)
-    const proxify = target => {
-      return this.createProxy(target)
-    }
+    const proxify = target => this.proxify(target)
+    const getType = (...args) => this.getType(...args)
     this._handler = {
       get (target, property, receiver) {
         if (property === SYMBOL_PROXY) {
@@ -110,8 +109,25 @@ class Reactor {
           return
         }
         trigger(target, property)
-        if (typeof value === 'object') {
-          value = proxify(value)
+        const sType = getType(value)
+        const tp = target[property]
+        switch (sType) {
+          case 'array': {
+            if (getType(tp) === 'array') {
+              tp.splice(0, tp.length, ...value)
+              return
+            } else {
+              value = proxify(value)
+            }
+            break
+          }
+          case 'object': {
+            value = proxify(value)
+            break
+          }
+          default: {
+            break
+          }
         }
         return Reflect.set(target, property, value, receiver)
       },

@@ -827,4 +827,28 @@ describe('bug array access', function () {
     })
     expect(store.getters.getFeatReport).toEqual([])
   })
+
+  it('should not trigger error when push item in array', function () {
+    const state = {
+      feats: []
+    }
+    const mutations = {
+      pushItem: function ({ state }, { item }) {
+        state.feats.push(item)
+      },
+      replaceFeats: function ({ state }, { feats }) {
+        state.feats = feats
+      }
+    }
+    const store = new Reactor({
+      state,
+      mutations
+    })
+    expect(() => store.mutations.pushItem({ item: 'test' })).not.toThrow()
+    expect(store.state.feats).toEqual(['test'])
+    store.mutations.replaceFeats({ feats: ['xxx'] })
+    expect(store.state.feats).toEqual(['xxx'])
+    expect(() => store.mutations.pushItem({ item: 'test' })).not.toThrow()
+    expect(store.state.feats).toEqual(['xxx', 'test'])
+  })
 })
