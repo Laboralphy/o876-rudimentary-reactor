@@ -58,6 +58,9 @@ const REACTOR_NAMESPACE = '**O876_REACTOR_NS**'
 const IS_PROXY = REACTOR_NAMESPACE + 'IS_PROXY'
 const SYMBOL_PROXY = Symbol(IS_PROXY)
 
+const MUTATION_PARAM_ORDER_PAYLOAD_CONTEXT = 1
+const MUTATION_PARAM_ORDER_CONTEXT_PAYLOAD = 2
+
 /**
  * Given an array of strings, return another array where all each matches an array prototype method
  * @param a {string[]}
@@ -92,6 +95,7 @@ class Reactor {
     this._mutations = {}
     this._externals = externals
     this._events = new Events()
+    this._mutationParamOrder = MUTATION_PARAM_ORDER_PAYLOAD_CONTEXT
     const track = this.track.bind(this)
     const trigger = this.trigger.bind(this)
     const proxify = target => this.proxify(target)
@@ -155,6 +159,17 @@ class Reactor {
 
   static get getUnsupportedArrayMethods () {
     return []
+  }
+
+  get mutationParamOrder () {
+    return this._mutationParamOrder
+  }
+
+  /**
+   * @param value {number}
+   */
+  set mutationParamOrder (value) {
+    this._mutationParamOrder = value
   }
 
   createProxy (oTarget) {
@@ -401,17 +416,38 @@ class Reactor {
   }
 
   defineMutation (name, mutation) {
-    this._mutations[name] = payload => {
-      const result = mutation({
-        state: this.state,
-        getters: this.getters,
-        externals: this.externals
-      }, payload)
-      this._events.emit('mutation', {
-        name,
-        payload
-      })
-      return result
+    switch (this._mutationParamOrder) {
+      case MUTATION_PARAM_ORDER_CONTEXT_PAYLOAD: {
+        this._mutations[name] = payload => {
+          const result = mutation({
+            state: this.state,
+            getters: this.getters,
+            externals: this.externals
+          }, payload)
+          this._events.emit('mutation', {
+            name,
+            payload
+          })
+          return result
+        }
+        break
+      }
+
+      case MUTATION_PARAM_ORDER_PAYLOAD_CONTEXT: {
+        this._mutations[name] = payload => {
+          const result = mutation(payload, {
+            state: this.state,
+            getters: this.getters,
+            externals: this.externals
+          })
+          this._events.emit('mutation', {
+            name,
+            payload
+          })
+          return result
+        }
+        break
+      }
     }
   }
 

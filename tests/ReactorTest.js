@@ -318,7 +318,7 @@ describe('Reactor', function () {
 				sum: state => state.a.reduce((prev, curr) => prev + curr, 0)
 			},
 			mutations: {
-				pushItem: ({ state, getters }, { value }) => state.a.push(value)
+				pushItem: ({ value }, { state, getters }) => state.a.push(value)
 			}
 		}
 		const r = new Reactor(store)
@@ -338,7 +338,7 @@ describe('Reactor', function () {
 				sum: state => state.a.reduce((prev, curr) => prev + curr, 0)
 			},
 			mutations: {
-				pushItem: ({ state, getters }, { value }) => state.a.push(value + getters.sum)
+				pushItem: ({ value }, { state, getters }) => state.a.push(value + getters.sum)
 			}
 		}
 		const r = new Reactor(store)
@@ -584,7 +584,7 @@ describe('Reactor', function () {
     }
 
     const mutations = {
-      addBook: ({ state, getters }, { title, author, year }) => {
+      addBook: ({ title, author, year }, { state, getters }) => {
         state.books.push({
           id: getters.getMaxId + 1,
           title,
@@ -618,7 +618,7 @@ describe('Reactor', function () {
       x: 1
     }
     const mutations = {
-      setX: ({ state }, { value }) => {
+      setX: ({ value }, { state }) => {
         state.x = value
       }
     }
@@ -646,7 +646,7 @@ describe('bug getters return array at root of state', function () {
         getEffects: state => state.effects
       },
       mutations: {
-        addEffect: ({ state }, { effect }) => state.effects.push(effect)
+        addEffect: ({ effect }, { state }) => state.effects.push(effect)
       }
     })
     expect(s.getters.getEffects).toHaveSize(0)
@@ -662,7 +662,7 @@ describe('bug getters return array at root of state', function () {
         getEffects: state => state.effects
       },
       mutations: {
-        addEffect: ({ state }, { effect }) => state.effects.push(effect)
+        addEffect: ({ effect }, { state }) => state.effects.push(effect)
       }
     })
     expect(s.getters.getEffects).toHaveSize(0)
@@ -690,7 +690,7 @@ describe('bug getters return array at root of state', function () {
         }
       },
       mutations: {
-        addEffect: ({ state }, { effect }) => state.effects.push(effect)
+        addEffect: ({ effect }, { state }) => state.effects.push(effect)
       }
     })
     s.mutations.addEffect({ effect: { tag: 'A' }})
@@ -706,7 +706,7 @@ describe('bug getters return array at root of state', function () {
       }
     }
     const mutations = {
-      addEffect: ({ state }, { effect }) => state.effects.push(effect)
+      addEffect: ({ effect }, { state }) => state.effects.push(effect)
     }
     const s1 = new Reactor({
       state: {
@@ -833,10 +833,10 @@ describe('bug array access', function () {
       feats: []
     }
     const mutations = {
-      pushItem: function ({ state }, { item }) {
+      pushItem: function ({ item }, { state }) {
         state.feats.push(item)
       },
-      replaceFeats: function ({ state }, { feats }) {
+      replaceFeats: function ({ feats }, { state }) {
         state.feats = feats
       }
     }
@@ -858,7 +858,7 @@ describe('bug array access', function () {
       slot: 'weapon'
     }
     const mutations = {
-      equip: function ({ state }, { slot, item }) {
+      equip: function ({ slot, item }, { state }) {
         state.eq[slot] = item
       }
     }
