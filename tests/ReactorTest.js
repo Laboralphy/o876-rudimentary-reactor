@@ -878,3 +878,40 @@ describe('bug array access', function () {
     expect(store.isReactive(store.getters.getWeaponSlot)).toBeTrue()
   })
 })
+
+describe('store, function externals', function () {
+  it('should return { x: 1 } when getting externals', function () {
+    const f = () => {
+      return {
+        x: 1
+      }
+    }
+    const s = new Reactor({
+      state: {},
+      getters: {},
+      mutations: {},
+      externals: f
+    })
+
+    expect(s.externals).toEqual({ x: 1 })
+  })
+  it('should return { x } with different value when having externals function', function () {
+    let x = 10
+
+    const f = () => {
+      return {
+        x
+      }
+    }
+    const s = new Reactor({
+      state: {},
+      getters: {},
+      mutations: {},
+      externals: f
+    })
+
+    expect(s.externals).toEqual({ x: 10 })
+    x = 7
+    expect(s.externals).toEqual({ x: 7 })
+  })
+})
