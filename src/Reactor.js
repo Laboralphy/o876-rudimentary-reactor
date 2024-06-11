@@ -84,10 +84,21 @@ class Reactor {
    * @param getters {object} all getters
    * @param mutations {object} all mutations
    * @param externals {object} an objet containing non-reactive properties
+   * @param mutationParamOrder {number} MUTATION_PARAM_ORDER_*
+   * @param proxyId {number} poxy id starting sequence
    * @returns {boolean|any}
    */
-  constructor ({ state, getters, mutations = {}, externals = {} }) {
-    this._proxyId = 1
+  constructor ({
+    state,
+    getters,
+    mutations = {},
+    externals = {},
+    config: {
+      mutationParamOrder = MUTATION_PARAM_ORDER_PAYLOAD_CONTEXT,
+      proxyId = 1
+    } = {}
+  }) {
+    this._proxyId = proxyId
     this._runningEffects = []
     this._getters = {}
     this._getterData = {}
@@ -95,7 +106,7 @@ class Reactor {
     this._mutations = {}
     this._externals = externals
     this._events = new Events()
-    this._mutationParamOrder = MUTATION_PARAM_ORDER_PAYLOAD_CONTEXT
+    this._mutationParamOrder = mutationParamOrder
     const track = this.track.bind(this)
     const trigger = this.trigger.bind(this)
     const proxify = target => this.proxify(target)
@@ -312,10 +323,9 @@ class Reactor {
   /**
    * Turn an array into à reactive array
    * @param aTarget {[]}
-   * @param name {string} array name useful for tracking dependency
    * @return {[]} clone of aTarget
    */
-  proxifyArray (aTarget, name) {
+  proxifyArray (aTarget) {
     const aClone = aTarget.map(e => this.proxify(e))
     ARRAY_TRACKED_METHODS.forEach(m => {
       Object.defineProperty(aClone, m, {
