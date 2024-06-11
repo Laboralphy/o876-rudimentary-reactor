@@ -200,7 +200,10 @@ class Reactor {
   }
 
   get externals () {
-    return this._externals
+    const x = this._externals
+    return typeof x === 'function'
+      ? x()
+      : x
   }
 
   /**
