@@ -164,6 +164,15 @@ class Reactor {
     })
   }
 
+  static get CONSTS () {
+    return {
+      MUTATION_PARAM_ORDER_PAYLOAD_CONTEXT,
+      MUTATION_PARAM_ORDER_CONTEXT_PAYLOAD,
+      ARRAY_TRIGGERED_METHODS,
+      ARRAY_TRACKED_METHODS
+    }
+  }
+
   static get SYMBOL_PROXY () {
     return SYMBOL_PROXY
   }
@@ -327,7 +336,7 @@ class Reactor {
    */
   proxifyArray (aTarget) {
     const aClone = aTarget.map(e => this.proxify(e))
-    ARRAY_TRACKED_METHODS.forEach(m => {
+    Reactor.CONSTS.ARRAY_TRACKED_METHODS.forEach(m => {
       Object.defineProperty(aClone, m, {
         value: (...args) => {
           this.track(aClone, '')
@@ -335,7 +344,7 @@ class Reactor {
         }
       })
     })
-    ARRAY_TRIGGERED_METHODS.forEach(m => {
+    Reactor.CONSTS.ARRAY_TRIGGERED_METHODS.forEach(m => {
       Object.defineProperty(aClone, m, {
         value: (...args) => {
           this.trigger(aClone, '')

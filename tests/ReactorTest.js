@@ -916,34 +916,47 @@ describe('store, function externals', function () {
   })
 })
 
-fdescribe('bug 240620', function () {
+describe('bug 240620', function () {
   it('should work', function () {
     const r = new Reactor({
+      config: {
+        mutationParamOrder: Reactor.CONSTS.MUTATION_PARAM_ORDER_CONTEXT_PAYLOAD
+      },
       state: {
         properties: [],
         level: 5
       },
       getters: {
+        getProperties: function (state) {
+          return [
+            ...state.properties.slice(0)
+          ]
+        },
+        getLevel: function (state, getters) {
+          const p = getters
+            .getProperties
+            .filter(x => x.property === 'level-bonus')
+            .reduce((prev, curr) => prev + curr.amp, 0)
+          return state.level + p
+        },
         getMaxHP: function (state, getters) {
-          const p = state
-            .properties
+          const p = getters
+            .getProperties
             .filter(x => x.property === 'maxhp')
             .reduce((prev, curr) => prev + curr.amp, 0)
-          return state.level * 10 + p
+          return getters.getLevel * 10 + p
         }
       },
       mutations: {
         addProperty: function ({state}, { property, amp }) {
-          state.properties.push(property)
+          state.properties.push({ property, amp })
           return state.properties[state.properties - 1]
         }
       }
     })
     expect(r.getters.getMaxHP).toBe(50)
     r.mutations.addProperty({ property: 'maxhp', amp: 3 })
+    // MUST USE SLICE !!!!
     expect(r.getters.getMaxHP).toBe(53)
-    // 1 : on n'utilisait pas "getters"
-    // 2 : on avait inverser getters et mutation dans le new Reactor()
-    // 3 : on declarait mal mutation, getters et state dans new Reactor
   })
 })
