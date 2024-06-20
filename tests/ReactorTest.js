@@ -915,3 +915,35 @@ describe('store, function externals', function () {
     expect(s.externals).toEqual({ x: 7 })
   })
 })
+
+fdescribe('bug 240620', function () {
+  it('should work', function () {
+    const r = new Reactor({
+      state: {
+        properties: [],
+        level: 5
+      },
+      getters: {
+        getMaxHP: function (state, getters) {
+          const p = state
+            .properties
+            .filter(x => x.property === 'maxhp')
+            .reduce((prev, curr) => prev + curr.amp, 0)
+          return state.level * 10 + p
+        }
+      },
+      mutations: {
+        addProperty: function ({state}, { property, amp }) {
+          state.properties.push(property)
+          return state.properties[state.properties - 1]
+        }
+      }
+    })
+    expect(r.getters.getMaxHP).toBe(50)
+    r.mutations.addProperty({ property: 'maxhp', amp: 3 })
+    expect(r.getters.getMaxHP).toBe(53)
+    // 1 : on n'utilisait pas "getters"
+    // 2 : on avait inverser getters et mutation dans le new Reactor()
+    // 3 : on declarait mal mutation, getters et state dans new Reactor
+  })
+})
