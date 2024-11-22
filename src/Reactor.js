@@ -373,7 +373,7 @@ class Reactor {
    * @returns {Proxy}
    */
   proxifyObject (oTarget) {
-    if (this.isReactive(oTarget)) {
+    if (Object.isFrozen(oTarget) || Object.isSealed(oTarget) || this.isReactive(oTarget)) {
       return oTarget
     }
     oTarget[SYMBOL_PROXY] = ++this._proxyId

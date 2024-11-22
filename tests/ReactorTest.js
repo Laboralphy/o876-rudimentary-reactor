@@ -917,7 +917,7 @@ describe('store, function externals', function () {
 })
 
 describe('bug 240620', function () {
-  it('should work', function () {
+  it('should work when getter return sliced version of an array', function () {
     const r = new Reactor({
       config: {
         mutationParamOrder: Reactor.CONSTS.MUTATION_PARAM_ORDER_CONTEXT_PAYLOAD
@@ -958,5 +958,41 @@ describe('bug 240620', function () {
     r.mutations.addProperty({ property: 'maxhp', amp: 3 })
     // MUST USE SLICE !!!!
     expect(r.getters.getMaxHP).toBe(53)
+  })
+})
+
+describe('Object frozen', function () {
+  it('should not throw error when state has frozen object', function () {
+    const r = new Reactor({
+      config: {
+        mutationParamOrder: Reactor.CONSTS.MUTATION_PARAM_ORDER_CONTEXT_PAYLOAD
+      },
+      state: {
+        items: []
+      },
+      getters: {
+        getItemsSumOfAmp: function (state) {
+          return state.items.reduce((prev, curr) => prev + curr.blueprint.amp, 0)
+        }
+      },
+      mutations: {
+        addItem: function ({state}, { item }) {
+          state.items.push(item)
+        }
+      }
+    })
+    expect(r.getters.getItemsSumOfAmp).toBe(0)
+    const oBlueprint = {
+      amp: 12
+    }
+    const oBlueprint2 = {
+      amp: 48
+    }
+    Object.freeze(oBlueprint)
+    Object.freeze(oBlueprint2)
+    r.mutations.addItem({ item: { blueprint: oBlueprint } })
+    expect(r.getters.getItemsSumOfAmp).toBe(12)
+    r.mutations.addItem({ item: { blueprint: oBlueprint2 } })
+    expect(r.getters.getItemsSumOfAmp).toBe(12 + 48)
   })
 })

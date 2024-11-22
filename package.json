@@ -1,6 +1,6 @@
 {
   "name": "@laboralphy/store",
-  "version": "1.4.1",
+  "version": "1.4.2",
   "description": "A rudimentary store manager, inspired by Vue.js reactivity",
   "main": "index.js",
   "directories": {
