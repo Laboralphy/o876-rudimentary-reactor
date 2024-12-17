@@ -961,6 +961,34 @@ describe('bug 240620', function () {
   })
 })
 
+fdescribe('bug add something to object + getter Object.values.filter', function () {
+  it('should return 1', function () {
+    const state = {
+      c: {
+      }
+    }
+    const getters = {
+      getc: state => Object.values(state.c).filter(c => c.duration > 0)
+    }
+
+    const mutations = {
+      addc: ({ state }, { c }) => {
+        state.c[c.id] = c
+      }
+    }
+    const r = new Reactor({
+      state, getters, mutations, config: {
+        mutationParamOrder: Reactor.CONSTS.MUTATION_PARAM_ORDER_CONTEXT_PAYLOAD
+      }
+    })
+
+    expect(r.getters.getc.length).toBe(0)
+    r.mutations.addc({ c: { id: 1, duration: 10 }})
+    console.log(r._getterData.getc)
+    expect(r.getters.getc.length).toBe(1)
+  })
+})
+
 describe('Object frozen', function () {
   it('should not throw error when state has frozen object', function () {
     const r = new Reactor({
