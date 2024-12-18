@@ -854,7 +854,9 @@ describe('bug array access', function () {
 
   it('should respect object resemblance', function () {
     const state = {
-      eq: {},
+      eq: {
+        weapon: null
+      },
       slot: 'weapon'
     }
     const mutations = {
@@ -961,34 +963,6 @@ describe('bug 240620', function () {
   })
 })
 
-fdescribe('bug add something to object + getter Object.values.filter', function () {
-  it('should return 1', function () {
-    const state = {
-      c: {
-      }
-    }
-    const getters = {
-      getc: state => Object.values(state.c).filter(c => c.duration > 0)
-    }
-
-    const mutations = {
-      addc: ({ state }, { c }) => {
-        state.c[c.id] = c
-      }
-    }
-    const r = new Reactor({
-      state, getters, mutations, config: {
-        mutationParamOrder: Reactor.CONSTS.MUTATION_PARAM_ORDER_CONTEXT_PAYLOAD
-      }
-    })
-
-    expect(r.getters.getc.length).toBe(0)
-    r.mutations.addc({ c: { id: 1, duration: 10 }})
-    console.log(r._getterData.getc)
-    expect(r.getters.getc.length).toBe(1)
-  })
-})
-
 describe('Object frozen', function () {
   it('should not throw error when state has frozen object', function () {
     const r = new Reactor({
@@ -1022,5 +996,41 @@ describe('Object frozen', function () {
     expect(r.getters.getItemsSumOfAmp).toBe(12)
     r.mutations.addItem({ item: { blueprint: oBlueprint2 } })
     expect(r.getters.getItemsSumOfAmp).toBe(12 + 48)
+  })
+})
+
+describe('bug add something to object + getter Object.values.filter', function () {
+  it('should return 1', function () {
+    const state = {
+      x: 0,
+      c: {
+        3: { id: 3, duration: 0 }
+      }
+    }
+    const getters = {
+      getc: state => Object.values(state.c).filter(c => c.duration > 0),
+    }
+
+    const mutations = {
+      addc: ({ state }, { c }) => {
+        state.c[c.id] = c
+      },
+      addc2: ({ state }, { c }) => {
+        state.c = {
+          ...state.c,
+          [c.id]: c
+        }
+      }
+    }
+    const r = new Reactor({
+      state, getters, mutations, config: {
+        mutationParamOrder: Reactor.CONSTS.MUTATION_PARAM_ORDER_CONTEXT_PAYLOAD
+      }
+    })
+
+    expect(r.getters.getc.length).toBe(0)
+    r.mutations.addc({ c: { id: 1, duration: 10 }})
+    // r.mutations.addc2({ c: { id: 1, duration: 10 }})
+    expect(r.getters.getc.length).toEqual(1)
   })
 })

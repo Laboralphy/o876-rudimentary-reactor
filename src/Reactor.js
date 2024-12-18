@@ -123,6 +123,9 @@ class Reactor {
         if (value === target[property]) {
           return
         }
+        if (!(property in target)) {
+          trigger(target)
+        }
         trigger(target, property)
         const sType = getType(value)
         const tp = target[property]
@@ -273,7 +276,7 @@ class Reactor {
   }
 
   /**
-   * a property has been accessed : register this target/property
+   * a property has been accessed for reading : register this target/property
    * to all currently running getters.
    * @param target {object} an object whose property is being accessed
    * @param property {string} name of the property that is accessed
@@ -300,12 +303,25 @@ class Reactor {
    * @param target {object} an object whose property is being modified
    * @param property {string} name of the property that is modified
    */
-  trigger (target, property) {
+  trigger (target, property = undefined) {
+    // if no property specified, is getter dependent to target
     // invalidate cache for all getters having target/property
     const gd = this._getterData
     this.iterate(this._getters, (g, name) => {
       const gns = gd[name]
-      if (this.findDependency(gns._depreg, target, property)) {
+      const depreg = gns._depreg
+      let bInvalidate = false
+      if ((property === undefined) &&
+        Object
+          .values(depreg)
+          .flat()
+          .indexOf(target) >= 0
+      ) {
+        bInvalidate = true
+      } else if (this.findDependency(depreg, target, property)) {
+        bInvalidate = true
+      }
+      if (bInvalidate) {
         this.trigger(gns, '_cache')
         gns._invalidCache = true
       }
