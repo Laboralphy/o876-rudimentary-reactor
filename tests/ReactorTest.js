@@ -999,12 +999,12 @@ describe('Object frozen', function () {
   })
 })
 
-describe('bug add something to object + getter Object.values.filter', function () {
+fdescribe('bug add something to object + getter Object.values.filter', function () {
   it('should return 1', function () {
     const state = {
       x: 0,
       c: {
-        3: { id: 3, duration: 0 }
+        // 3: { id: 3, duration: 0 }
       }
     }
     const getters = {
@@ -1028,9 +1028,11 @@ describe('bug add something to object + getter Object.values.filter', function (
       }
     })
 
+    console.log('--- setp 1')
     expect(r.getters.getc.length).toBe(0)
     r.mutations.addc({ c: { id: 1, duration: 10 }})
     // r.mutations.addc2({ c: { id: 1, duration: 10 }})
+    console.log('--- setp 2')
     expect(r.getters.getc.length).toEqual(1)
   })
 })

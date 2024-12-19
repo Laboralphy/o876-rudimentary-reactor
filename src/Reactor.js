@@ -1,3 +1,4 @@
+const DependencyRegistry = require('./DependencyRegistry')
 /**
  * This class is an implementation of Vue.js reactivity system
  * as it is described at : https://v3.vuejs.org/guide/reactivity.html
@@ -264,18 +265,6 @@ class Reactor {
   }
 
   /**
-   * returns true if a target/property is registred as a dependency
-   * of the specified getter
-   * @param depreg {Object<string, object[]>} list of dependencies
-   * @param target {object} an object
-   * @param property {string} property name
-   * @return {boolean}
-   */
-  findDependency (depreg, target, property) {
-    return (property in depreg) && (depreg[property].indexOf(target) >= 0)
-  }
-
-  /**
    * a property has been accessed for reading : register this target/property
    * to all currently running getters.
    * @param target {object} an object whose property is being accessed
@@ -288,12 +277,7 @@ class Reactor {
     // all runningEffects receive target/prop
     this._runningEffects.forEach(re => {
       const d = re._depreg
-      if (!this.findDependency(d, target, property)) {
-        if (!(property in d)) {
-          d[property] = []
-        }
-        d[property].push(target)
-      }
+      d.add(target, property)
     })
   }
 
@@ -311,14 +295,11 @@ class Reactor {
       const gns = gd[name]
       const depreg = gns._depreg
       let bInvalidate = false
-      if ((property === undefined) &&
-        Object
-          .values(depreg)
-          .flat()
-          .indexOf(target) >= 0
-      ) {
-        bInvalidate = true
-      } else if (this.findDependency(depreg, target, property)) {
+      if (property === undefined) {
+        if (depreg.has(target)) {
+          bInvalidate = true
+        }
+      } else if (depreg.has(target, property)) {
         bInvalidate = true
       }
       if (bInvalidate) {
@@ -441,7 +422,7 @@ class Reactor {
       _cache: undefined,
       _invalidCache: true,
       _name: name,
-      _depreg: {}
+      _depreg: new DependencyRegistry()
     }
     Object.defineProperty(
       this._getterProxies,
@@ -505,7 +486,8 @@ class Reactor {
       gns._cache = getter(this._state, this.getters, this.externals)
       gns._invalidCache = false
     }
-    pEffect._depreg = gns._depreg = {}
+    gns._depreg.reset()
+    pEffect._depreg = gns._depreg
     this.createEffect(pEffect)
     return gns._cache
   }
