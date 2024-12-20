@@ -181,7 +181,7 @@ describe('Reactor', function () {
 		expect(r.getters.names).toBe('Queen Maeve, Starlight, Stormfront, The Deep')
 	})
 
-	xit('deals with in operator and property deletion', function () {
+	it('deals with in operator and property deletion', function () {
 		const state = {
 			x: {
 				good: true,
@@ -194,8 +194,10 @@ describe('Reactor', function () {
 		}
 		const r = new Reactor({ state, getters })
 		expect(r.getters.hasNeutralProperty).toBeTruthy()
-		delete r.state.x.neutral
-		expect(r.getters.hasNeutralProperty).toBeFalsy()
+		expect(() => {
+      delete r.state.x.neutral
+    }).toThrow() // cannot delete property
+    expect(r.getters.hasNeutralProperty).toBeTruthy()
 		r.state.x.neutral = true
 		expect(r.getters.hasNeutralProperty).toBeTruthy()
 	})
@@ -1019,6 +1021,6 @@ describe('bug add something to object + getter Object.values.filter', function (
       }
     })
     expect(r.getters.getc).toEqual([])
-    console.log(r._getterData.getc._depreg._properties)
+    expect(() => r.mutations.addc({ c: { id: 10, duration: 10 }})).toThrow()
   })
 })
