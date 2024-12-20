@@ -54,10 +54,7 @@ const ARRAY_TRIGGERED_METHODS = filterArrayFunction([
 ])
 
 const Events = require('events')
-
-const REACTOR_NAMESPACE = '**O876_REACTOR_NS**'
-const IS_PROXY = REACTOR_NAMESPACE + 'IS_PROXY'
-const SYMBOL_PROXY = Symbol(IS_PROXY)
+const { SYMBOL_PROXY } = require('./symbols')
 
 const MUTATION_PARAM_ORDER_PAYLOAD_CONTEXT = 1
 const MUTATION_PARAM_ORDER_CONTEXT_PAYLOAD = 2
@@ -125,7 +122,7 @@ class Reactor {
           return
         }
         if (!(property in target)) {
-          trigger(target)
+          throw new Error('Cannot add or delete properties in state. This is because getters cache is not invalidate by adding/removing properties')
         }
         trigger(target, property)
         const sType = getType(value)
@@ -155,8 +152,9 @@ class Reactor {
         return Reflect.has(target, property)
       },
       deleteProperty (target, property) {
-        trigger(target, property)
-        return Reflect.deleteProperty(target, property)
+        throw new Error('Cannot add or delete properties in state. This is because getters cache is not invalidate by adding/removing properties')
+        // trigger(target, property)
+        // return Reflect.deleteProperty(target, property)
       }
     }
     this._state = this.proxify(state)
@@ -287,7 +285,7 @@ class Reactor {
    * @param target {object} an object whose property is being modified
    * @param property {string} name of the property that is modified
    */
-  trigger (target, property = undefined) {
+  trigger (target, property) {
     // if no property specified, is getter dependent to target
     // invalidate cache for all getters having target/property
     const gd = this._getterData
@@ -295,11 +293,7 @@ class Reactor {
       const gns = gd[name]
       const depreg = gns._depreg
       let bInvalidate = false
-      if (property === undefined) {
-        if (depreg.has(target)) {
-          bInvalidate = true
-        }
-      } else if (depreg.has(target, property)) {
+      if (depreg.has(target, property)) {
         bInvalidate = true
       }
       if (bInvalidate) {
@@ -373,7 +367,6 @@ class Reactor {
     if (Object.isFrozen(oTarget) || Object.isSealed(oTarget) || this.isReactive(oTarget)) {
       return oTarget
     }
-    oTarget[SYMBOL_PROXY] = ++this._proxyId
     Object.defineProperty(oTarget, SYMBOL_PROXY, {
       value: ++this._proxyId,
       writable: false,
@@ -382,9 +375,7 @@ class Reactor {
     })
     const oClone = {}
     this.iterate(oTarget, (value, key) => {
-      if (key !== SYMBOL_PROXY) {
-        oClone[key] = this.proxify(value)
-      }
+      oClone[key] = this.proxify(value)
     })
     return this.createProxy(oClone)
   }
@@ -392,15 +383,14 @@ class Reactor {
   /**
    * Installs a proxy on an object to make it reactive
    * @param target {object|[]}
-   * @param name {string}
    */
-  proxify (target, name = undefined) {
+  proxify (target) {
     switch (this.getType(target)) {
       case 'object':
         return this.proxifyObject(target)
 
       case 'array':
-        return this.proxifyArray(target, name)
+        return this.proxifyArray(target)
 
       default:
         return target

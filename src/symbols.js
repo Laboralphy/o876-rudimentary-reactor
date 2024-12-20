@@ -1,0 +1,7 @@
+const SYMBOL_PROXY = Symbol('O876_REACTOR_PROXY')
+const SYMBOL_ARRAY = Symbol('O876_REACTOR_ARRAY')
+
+module.exports = {
+  SYMBOL_PROXY,
+  SYMBOL_ARRAY
+}
