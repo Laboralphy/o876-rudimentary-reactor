@@ -73,7 +73,7 @@ function filterArrayFunction (a) {
  * - state : a proxified version of the state
  * - getters : a set of reactive getters
  *
- * see ReactorTest unit tests to see how to use
+ * see ReactorTest unit __tests__ to see how to use
  */
 class Reactor {
   /**
@@ -122,7 +122,7 @@ class Reactor {
           return
         }
         if (!(property in target)) {
-          throw new Error('Cannot add or delete properties in state. This is because getters cache is not invalidate by adding/removing properties')
+          throw new Error('Cannot add key ' + property + '. Adding or deleting keys is forbidden in state. This is because getters cache is not invalidate by adding/removing properties')
         }
         trigger(target, property)
         const sType = getType(value)
@@ -152,7 +152,7 @@ class Reactor {
         return Reflect.has(target, property)
       },
       deleteProperty (target, property) {
-        throw new Error('Cannot add or delete properties in state. This is because getters cache is not invalidate by adding/removing properties')
+        throw new Error('Cannot delete key ' + property + '. Adding or deleting keys is forbidden in state. This is because getters cache is not invalidate by adding/removing properties')
         // trigger(target, property)
         // return Reflect.deleteProperty(target, property)
       }
