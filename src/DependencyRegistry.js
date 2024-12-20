@@ -31,7 +31,7 @@ class DependencyRegistry {
   get data () {
     return {
       properties: this._properties,
-      instances: this._instances
+      un: this._instances
     }
   }
 

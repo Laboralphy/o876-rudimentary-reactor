@@ -409,7 +409,7 @@ describe('Reactor', function () {
 		const r = new Reactor(store)
 		const i1 = r.getters.bp.i1
     expect(r.isReactive(i1)).toBeTruthy()
-		expect(r.isReactive(store.state.b.i1)).toBeTrue()
+		expect(r.isReactive(store.state.b.i1)).toBeTruthy()
 		expect(r.isReactive(r.state.b.i1)).toBeTruthy()
 	})
 
@@ -649,9 +649,9 @@ describe('bug getters return array at root of state', function () {
         addEffect: ({ effect }, { state }) => state.effects.push(effect)
       }
     })
-    expect(s.getters.getEffects).toHaveSize(0)
+    expect(s.getters.getEffects).toHaveLength(0)
     s.mutations.addEffect({ effect: { tag: 'X' }})
-    expect(s.getters.getEffects).toHaveSize(1)
+    expect(s.getters.getEffects).toHaveLength(1)
   })
   it('how cache works', function () {
     const s = new Reactor({
@@ -665,18 +665,18 @@ describe('bug getters return array at root of state', function () {
         addEffect: ({ effect }, { state }) => state.effects.push(effect)
       }
     })
-    expect(s.getters.getEffects).toHaveSize(0)
+    expect(s.getters.getEffects).toHaveLength(0)
     s.mutations.addEffect({ effect: { tag: 'X' }})
-    expect(s.getters.getEffects).toHaveSize(1)
+    expect(s.getters.getEffects).toHaveLength(1)
     s.mutations.addEffect({ effect: { tag: 'Y' }})
-    expect(s.getters.getEffects).toHaveSize(2)
-    expect(s.getters.getEffects).toHaveSize(2)
-    expect(s.getters.getEffects).toHaveSize(2)
-    expect(s.getters.getEffects).toHaveSize(2)
-    expect(s.getters.getEffects).toHaveSize(2)
-    expect(s.getters.getEffects).toHaveSize(2)
+    expect(s.getters.getEffects).toHaveLength(2)
+    expect(s.getters.getEffects).toHaveLength(2)
+    expect(s.getters.getEffects).toHaveLength(2)
+    expect(s.getters.getEffects).toHaveLength(2)
+    expect(s.getters.getEffects).toHaveLength(2)
+    expect(s.getters.getEffects).toHaveLength(2)
     s.mutations.addEffect({ effect: { tag: 'Y' }})
-    expect(s.getters.getEffects).toHaveSize(3)
+    expect(s.getters.getEffects).toHaveLength(3)
   })
   it('double use of getters', function () {
     const s = new Reactor({
@@ -694,9 +694,9 @@ describe('bug getters return array at root of state', function () {
       }
     })
     s.mutations.addEffect({ effect: { tag: 'A' }})
-    expect(s.getters.isThereAnX).toBeFalse()
+    expect(s.getters.isThereAnX).toBeFalsy()
     s.mutations.addEffect({ effect: { tag: 'X' }})
-    expect(s.getters.isThereAnX).toBeTrue()
+    expect(s.getters.isThereAnX).toBeTruthy()
   })
   it('mise en evidence du probleme des getter réutilisé', function () {
     const getters = {
@@ -723,9 +723,9 @@ describe('bug getters return array at root of state', function () {
       mutations
     })
     s1.mutations.addEffect({ effect: { tag: 'A' }})
-    expect(s1.getters.isThereAnX).toBeFalse()
+    expect(s1.getters.isThereAnX).toBeFalsy()
     s2.mutations.addEffect({ effect: { tag: 'X' }})
-    expect(s2.getters.isThereAnX).toBeTrue()
+    expect(s2.getters.isThereAnX).toBeTruthy()
   })
 })
 
@@ -877,7 +877,7 @@ describe('bug array access', function () {
     store.mutations.equip({ slot: 'weapon', item: w })
     store.mutations.equip({ slot: 'weapon', item: store.getters.getWeaponSlot })
     expect(store.getters.getWeaponSlot).toEqual({ name: 'sword', damage: 8 })
-    expect(store.isReactive(store.getters.getWeaponSlot)).toBeTrue()
+    expect(store.isReactive(store.getters.getWeaponSlot)).toBeTruthy()
   })
 })
 
@@ -999,7 +999,7 @@ describe('Object frozen', function () {
   })
 })
 
-fdescribe('bug add something to object + getter Object.values.filter', function () {
+describe('bug add something to object + getter Object.values.filter', function () {
   it('should return 1', function () {
     const state = {
       c: {}
@@ -1019,6 +1019,6 @@ fdescribe('bug add something to object + getter Object.values.filter', function 
       }
     })
     expect(r.getters.getc).toEqual([])
-    console.log(r._getterData.getc._depreg)
+    console.log(r._getterData.getc._depreg._properties)
   })
 })
