@@ -14,7 +14,7 @@ describe('checks object in array reactivity', function () {
         getItems: state => {
           const o = {}
           Object.entries(state.actions).forEach(([ sAction, oAction]) => {
-            o[sAction] = oAction.cooldown.$length
+            o[sAction] = oAction.cooldown.length
           })
           return o
         }

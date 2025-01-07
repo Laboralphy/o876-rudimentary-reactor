@@ -8,53 +8,8 @@ const DependencyRegistry = require('./DependencyRegistry')
  * read README.md for "how to use"
  */
 
-/**
- * these are the Array methods that are to be tracked in order to
- * maintain reactivity
- */
-const ARRAY_TRACKED_METHODS = filterArrayFunction([
-  'at',
-  'concat',
-  'entries',
-  'every',
-  'filter',
-  'find',
-  'findIndex',
-  'flat',
-  'flatMap',
-  'forEach',
-  'includes',
-  'indexOf',
-  'join',
-  'keys',
-  'lastIndexOf',
-  'map',
-  'reduce',
-  'reduceRight',
-  'slice',
-  'some',
-  'toLocaleString',
-  'toString',
-  'values'
-])
-
-/**
- * these Array methods triggers cache invalidation on dependent getters
- */
-const ARRAY_TRIGGERED_METHODS = filterArrayFunction([
-  'copyWithin',
-  'fill',
-  'push',
-  'pop',
-  'reverse',
-  'shift',
-  'sort',
-  'splice',
-  'unshift'
-])
-
 const Events = require('events')
-const { SYMBOL_PROXY } = require('./symbols')
+const { SYMBOL_PROXY, SYMBOL_BASE_OBJECT } = require('./symbols')
 
 const MUTATION_PARAM_ORDER_PAYLOAD_CONTEXT = 1
 const MUTATION_PARAM_ORDER_CONTEXT_PAYLOAD = 2
@@ -66,6 +21,18 @@ const MUTATION_PARAM_ORDER_CONTEXT_PAYLOAD = 2
  */
 function filterArrayFunction (a) {
   return a.filter(m => m in Array.prototype)
+}
+
+function isPositiveNumber (x) {
+  const sType = typeof x
+  if (sType === 'string') {
+    const y = +x
+    return !isNaN(y) && y >= 0
+  } else if (sType === 'number') {
+    return !isNaN(x) && x >= 0
+  } else {
+    return false
+  }
 }
 
 /**
@@ -92,11 +59,9 @@ class Reactor {
     mutations = {},
     externals = {},
     config: {
-      mutationParamOrder = MUTATION_PARAM_ORDER_PAYLOAD_CONTEXT,
-      proxyId = 1
+      mutationParamOrder = MUTATION_PARAM_ORDER_PAYLOAD_CONTEXT
     } = {}
   }) {
-    this._proxyId = proxyId
     this._runningEffects = []
     this._getters = {}
     this._getterData = {}
@@ -108,48 +73,75 @@ class Reactor {
     const track = this.track.bind(this)
     const trigger = this.trigger.bind(this)
     const proxify = target => this.proxify(target)
-    const getType = (...args) => this.getType(...args)
+    this._handlerArray = {
+      get (target, property, receiver) {
+        if (property === SYMBOL_PROXY) {
+          return target[SYMBOL_PROXY] || true
+        }
+        const result =  Reflect.get(target, property, receiver)
+        if (typeof target[property] === 'function') {
+          track(target, SYMBOL_BASE_OBJECT)
+        }
+        if (property === 'length' || isPositiveNumber(property)) {
+          track(target, property)
+        }
+        return result
+      },
+      set (target, property, value, receiver) {
+        const bIndex = isPositiveNumber(property)
+        const bNewIndex = bIndex && target[property] !== undefined
+        const result = Reflect.set(target, property, proxify(value), receiver)
+        if (property === 'length' || bIndex) {
+          trigger(target, property)
+        }
+        if (bNewIndex) {
+          trigger(target, SYMBOL_BASE_OBJECT)
+        }
+        return result
+      },
+      has (target, property) {
+        const result =  Reflect.has(target, property)
+        track(target, property)
+        return result
+      },
+      ownKeys (target) {
+        const result =  Reflect.ownKeys(target)
+        track(target, SYMBOL_BASE_OBJECT)
+        return result
+      },
+      deleteProperty (target, property) {
+        const result = Reflect.deleteProperty(target, property)
+        trigger(target, property)
+        return result
+      }
+    }
     this._handler = {
       get (target, property, receiver) {
         if (property === SYMBOL_PROXY) {
           return target[SYMBOL_PROXY] || true
         }
+        const result = Reflect.get(target, property, receiver)
         track(target, property)
-        return Reflect.get(target, property, receiver)
+        return result
       },
       set (target, property, value, receiver) {
-        if (value === target[property]) {
-          return
-        }
-        if (!(property in target)) {
-          throw new Error('Cannot add key ' + property + '. Adding or deleting keys is forbidden in state. This is because getters cache is not invalidate by adding/removing properties')
-        }
+        const bNewProperty = !(property in target)
+        const result =  Reflect.set(target, property, proxify(value), receiver)
         trigger(target, property)
-        const sType = getType(value)
-        const tp = target[property]
-        switch (sType) {
-          case 'array': {
-            if (getType(tp) === 'array') {
-              tp.splice(0, tp.length, ...value)
-              return
-            } else {
-              value = proxify(value)
-            }
-            break
-          }
-          case 'object': {
-            value = proxify(value)
-            break
-          }
-          default: {
-            break
-          }
+        if (bNewProperty) {
+          trigger(target, SYMBOL_BASE_OBJECT)
         }
-        return Reflect.set(target, property, value, receiver)
+        return result
       },
       has (target, property) {
+        const result =  Reflect.has(target, property)
         track(target, property)
-        return Reflect.has(target, property)
+        return result
+      },
+      ownKeys (target) {
+        const result =  Reflect.ownKeys(target)
+        track(target, SYMBOL_BASE_OBJECT)
+        return result
       },
       deleteProperty (target, property) {
         throw new Error('Cannot delete key ' + property + '. Adding or deleting keys is forbidden in state. This is because getters cache is not invalidate by adding/removing properties')
@@ -169,18 +161,8 @@ class Reactor {
   static get CONSTS () {
     return {
       MUTATION_PARAM_ORDER_PAYLOAD_CONTEXT,
-      MUTATION_PARAM_ORDER_CONTEXT_PAYLOAD,
-      ARRAY_TRIGGERED_METHODS,
-      ARRAY_TRACKED_METHODS
+      MUTATION_PARAM_ORDER_CONTEXT_PAYLOAD
     }
-  }
-
-  static get SYMBOL_PROXY () {
-    return SYMBOL_PROXY
-  }
-
-  static get getUnsupportedArrayMethods () {
-    return []
   }
 
   get mutationParamOrder () {
@@ -199,6 +181,13 @@ class Reactor {
       return oTarget
     }
     return new Proxy(oTarget, this._handler)
+  }
+
+  createArrayProxy (aTarget) {
+    if (this.isReactive(aTarget)) {
+      return aTarget
+    }
+    return new Proxy(aTarget, this._handlerArray)
   }
 
   isReactive (oTarget) {
@@ -269,7 +258,8 @@ class Reactor {
    * @param property {string} name of the property that is accessed
    */
   track (target, property) {
-    if (this.getType(target[property]) === 'function') {
+    const sType = this.getType(target[property])
+    if (sType === 'function') {
       return
     }
     // all runningEffects receive target/prop
@@ -321,49 +311,6 @@ class Reactor {
   }
 
   /**
-   * Turn an array into à reactive array
-   * @param aTarget {[]}
-   * @return {[]} clone of aTarget
-   */
-  proxifyArray (aTarget) {
-    for (let i = 0, l = aTarget.length; i < l; ++i) {
-      aTarget[i] = this.proxify(aTarget[i])
-    }
-    const aClone = aTarget //.map(e => this.proxify(e))
-    Reactor.CONSTS.ARRAY_TRACKED_METHODS.forEach(m => {
-      Object.defineProperty(aClone, m, {
-        value: (...args) => {
-          this.track(aClone, '')
-          return Array.prototype[m].call(aClone, ...args)
-        }
-      })
-    })
-    Reactor.CONSTS.ARRAY_TRIGGERED_METHODS.forEach(m => {
-      Object.defineProperty(aClone, m, {
-        value: (...args) => {
-          console.log('using array method', m, 'with args', ...args)
-          console.log(aClone)
-          this.trigger(aClone, '')
-          return Array.prototype[m].call(aClone, ...(args.map(i => this.proxify(i))))
-        }
-      })
-    })
-
-    // adding a custom wrapper property
-    Object.defineProperty(aClone, '$length', {
-      get: () => {
-        this.track(aClone, '')
-        return aClone.length
-      },
-      set: value => {
-        this.trigger(aClone, '')
-        aClone.length = value
-      }
-    })
-    return aClone
-  }
-
-  /**
    * Turn an object into à reactive object
    * @param oTarget
    * @returns {Proxy}
@@ -372,17 +319,23 @@ class Reactor {
     if (Object.isFrozen(oTarget) || Object.isSealed(oTarget) || this.isReactive(oTarget)) {
       return oTarget
     }
+    const bArray = Array.isArray(oTarget)
     Object.defineProperty(oTarget, SYMBOL_PROXY, {
-      value: ++this._proxyId,
+      value: true,
       writable: false,
       configurable: false,
       enumerable: false
     })
-    const oClone = {}
-    this.iterate(oTarget, (value, key) => {
-      oClone[key] = this.proxify(value)
-    })
-    return this.createProxy(oClone)
+    if (bArray) {
+      const aClone = oTarget.map(e => this.proxify(e))
+      return this.createArrayProxy(aClone)
+    } else {
+      const oClone = {}
+      this.iterate(oTarget, (value, key) => {
+        oClone[key] = this.proxify(value)
+      })
+      return this.createProxy(oClone)
+    }
   }
 
   /**
@@ -391,11 +344,10 @@ class Reactor {
    */
   proxify (target) {
     switch (this.getType(target)) {
-      case 'object':
-        return this.proxifyObject(target)
-
       case 'array':
-        return this.proxifyArray(target)
+      case 'object': {
+        return this.proxifyObject(target)
+      }
 
       default:
         return target

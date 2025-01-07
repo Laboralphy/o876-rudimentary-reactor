@@ -5,7 +5,48 @@ describe('Reactor', function () {
 		expect(Reactor).toBeDefined()
 	})
 
-	it('basic getter testing', function () {
+  it('should return 1 when adding a new property a = 1', function () {
+    const r = new Reactor({
+      state: {},
+      getters: {
+        getA: state => state.a
+      },
+      mutations: {
+        addA: ({ state }) => state.a = 1
+      },
+      config: {
+        mutationParamOrder: Reactor.CONSTS.MUTATION_PARAM_ORDER_CONTEXT_PAYLOAD
+      }
+    })
+    expect(r.getters.getA).toBeUndefined()
+    r.mutations.addA()
+    expect(r.getters.getA).toBe(1)
+  })
+
+  it('should return sum of all keys when adding starting with empty registry', function () {
+    const r = new Reactor({
+      state: {
+        registry: {}
+      },
+      getters: {
+        getSumOfProps: state => Object.values(state.registry).reduce((prev, curr) => prev + curr, 0)
+      },
+      mutations: {
+        addProp: ({ state }, { prop, value }) => state.registry[prop] = value
+      },
+      config: {
+        mutationParamOrder: Reactor.CONSTS.MUTATION_PARAM_ORDER_CONTEXT_PAYLOAD
+      }
+    })
+    // expect(r.getters.getSumOfProps).toBe(0)
+    r.mutations.addProp({ prop: 'x', value: 10 })
+    r.mutations.addProp({ prop: 'y', value: 20 })
+    expect(r.getters.getSumOfProps).toBe(30)
+    r.mutations.addProp({ prop: 'z', value: 30 })
+    expect(r.getters.getSumOfProps).toBe(60)
+  })
+
+  it('basic getter testing', function () {
 		// simple state with props "a" & "b"
 		const state = {
 			a: 10,
@@ -284,7 +325,7 @@ describe('Reactor', function () {
 		expect(r.getters.getAC).toBe(7)
 	})
 
-	it('using $length reactive property', function () {
+	it('using length reactive property', function () {
 		const state = {
 			a: []
 		}
@@ -292,23 +333,15 @@ describe('Reactor', function () {
 			// this getter uses "length" property
 			render_1: state => 'there ' + (state.a.length > 1 ? 'are' : 'is') + ' ' + state.a.length + ' item' + (state.a.length > 1 ? 's' : '') + '.',
 
-			// this getter uses "$length" custom property (only available thru Reactor Class)
-			// "$length" is a reactive alias of "length"
-			render_2: state => 'there ' + (state.a.$length > 1 ? 'are' : 'is') + ' ' + state.a.$length + ' item' + (state.a.$length > 1 ? 's' : '') + '.'
 		}
 		const r = new Reactor({ state, getters })
 		expect(r.getters.render_1).toBe('there is 0 item.')
-		expect(r.getters.render_2).toBe('there is 0 item.')
 
 		// let's add 3 items
 		r.state.a.push(5, 5, 5)
 		// .length is NOT reactive
 		// so the getter "render_1" will not be updated
-		expect(r.getters.render_1).toBe('there is 0 item.') // still the old value of length
-
-		// on the other hand, .$length is reactive
-		// the getter "render_2" will be updated with the new length value
-		expect(r.getters.render_2).toBe('there are 3 items.')
+		expect(r.getters.render_1).toBe('there are 3 items.') // still the old value of length
 	})
 
 	it('mutations basic testing', function () {
@@ -1021,6 +1054,6 @@ describe('bug add something to object + getter Object.values.filter', function (
       }
     })
     expect(r.getters.getc).toEqual([])
-    expect(() => r.mutations.addc({ c: { id: 10, duration: 10 }})).toThrow()
+    expect(() => r.mutations.addc({ c: { id: 10, duration: 10 }})).not.toThrow()
   })
 })

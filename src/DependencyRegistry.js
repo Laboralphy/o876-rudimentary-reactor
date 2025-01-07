@@ -1,5 +1,3 @@
-const { SYMBOL_PROXY } = require('./symbols')
-
 class DependencyRegistry {
   constructor () {
     this._properties = {}
@@ -7,7 +5,6 @@ class DependencyRegistry {
   }
 
   add (target, property) {
-    this._instances.add(target)
     const p = this._properties
     if (property in p) {
       p[property].add(target)
@@ -17,13 +14,9 @@ class DependencyRegistry {
   }
 
   has (target, property = undefined) {
-    let r
-    if (property === undefined) {
-      r = this._instances.has(target)
-    } else if (property in this._properties) {
+    let r = false
+    if (property in this._properties) {
       r = this._properties[property].has(target)
-    } else {
-      r = false
     }
     return r
   }
