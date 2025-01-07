@@ -326,7 +326,10 @@ class Reactor {
    * @return {[]} clone of aTarget
    */
   proxifyArray (aTarget) {
-    const aClone = aTarget.map(e => this.proxify(e))
+    for (let i = 0, l = aTarget.length; i < l; ++i) {
+      aTarget[i] = this.proxify(aTarget[i])
+    }
+    const aClone = aTarget //.map(e => this.proxify(e))
     Reactor.CONSTS.ARRAY_TRACKED_METHODS.forEach(m => {
       Object.defineProperty(aClone, m, {
         value: (...args) => {
@@ -338,6 +341,8 @@ class Reactor {
     Reactor.CONSTS.ARRAY_TRIGGERED_METHODS.forEach(m => {
       Object.defineProperty(aClone, m, {
         value: (...args) => {
+          console.log('using array method', m, 'with args', ...args)
+          console.log(aClone)
           this.trigger(aClone, '')
           return Array.prototype[m].call(aClone, ...(args.map(i => this.proxify(i))))
         }
