@@ -89,15 +89,21 @@ class Reactor {
       },
       set (target, property, value, receiver) {
         const bIndex = isPositiveNumber(property)
-        const bNewIndex = bIndex && target[property] !== undefined
-        const result = Reflect.set(target, property, proxify(value), receiver)
-        if (property === 'length' || bIndex) {
+        if (bIndex) {
+          const nIndex = +property
+          const nPrevLength = target.length
+          const result = Reflect.set(target, nIndex, proxify(value), receiver)
+          const nNewLength = target.length
           trigger(target, property)
+          if (nNewLength !== nPrevLength) {
+            trigger(target, 'length')
+          }
+          return result
+        } else if (property === 'length') {
+          const result = Reflect.set(target, property, proxify(value), receiver)
+          trigger(target, property)
+          return result
         }
-        if (bNewIndex) {
-          trigger(target, SYMBOL_BASE_OBJECT)
-        }
-        return result
       },
       has (target, property) {
         const result =  Reflect.has(target, property)
@@ -111,7 +117,12 @@ class Reactor {
       },
       deleteProperty (target, property) {
         const result = Reflect.deleteProperty(target, property)
+        const nPrevLength = target.length
         trigger(target, property)
+        const nNewLength = target.length
+        if (nNewLength !== nPrevLength) {
+          trigger(target, 'length')
+        }
         return result
       }
     }
