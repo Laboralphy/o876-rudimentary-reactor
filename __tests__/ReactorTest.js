@@ -46,6 +46,32 @@ describe('Reactor', function () {
     expect(r.getters.getSumOfProps).toBe(60)
   })
 
+  it('should return sum of all keys when adding then modifying existing registry', function () {
+    const r = new Reactor({
+      state: {
+        registry: {}
+      },
+      getters: {
+        getRegistry: state => state.registry,
+        getSumOfProps: (state, getters) => Object.values(getters.getRegistry).reduce((prev, curr) => prev + curr, 0)
+      },
+      mutations: {
+        addProp: ({ state }, { prop, value }) => state.registry[prop] = value
+      },
+      config: {
+        mutationParamOrder: Reactor.CONSTS.MUTATION_PARAM_ORDER_CONTEXT_PAYLOAD
+      }
+    })
+    // expect(r.getters.getSumOfProps).toBe(0)
+    r.mutations.addProp({ prop: 'x', value: 10 })
+    r.mutations.addProp({ prop: 'y', value: 20 })
+    expect(r.getters.getSumOfProps).toBe(30)
+    r.mutations.addProp({ prop: 'z', value: 30 })
+    expect(r.getters.getSumOfProps).toBe(60)
+    r.mutations.addProp({ prop: 'x', value: 30 })
+    expect(r.getters.getSumOfProps).toBe(80)
+  })
+
   it('basic getter testing', function () {
 		// simple state with props "a" & "b"
 		const state = {
@@ -141,9 +167,8 @@ describe('Reactor', function () {
 			arraySum: state.a.reduce((prev, curr) => curr + prev, 0)
 		}
 
-		expect(() => {
-			const r = new Reactor({ state, getters })
-		}).toThrow(new TypeError('Getter "arraySum" must be a function ; "number" was given.'))
+		expect(() => new Reactor({ state, getters })
+		).toThrow(new TypeError('Getter "arraySum" must be a function ; "number" was given.'))
 	})
 
 	it('pushing or shifting item on array', function () {
@@ -182,8 +207,6 @@ describe('Reactor', function () {
 			count: state => state.a.slice(0).length, // length is not reactive at the moment
 			render: (s, g) => {
 				const c = g.count
-				const dToday = new Date()
-				const nThisYear = dToday.getFullYear()
 				const aPeople = s.a.map(({ year, name }) => name + ' is born in ' + year)
 				const sPeople = aPeople.join(' ; ')
 				return `${c} people : ${sPeople}.`
@@ -353,7 +376,7 @@ describe('Reactor', function () {
 				sum: state => state.a.reduce((prev, curr) => prev + curr, 0)
 			},
 			mutations: {
-				pushItem: ({ value }, { state, getters }) => state.a.push(value)
+				pushItem: ({ value }, { state }) => state.a.push(value)
 			}
 		}
 		const r = new Reactor(store)

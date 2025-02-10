@@ -51,7 +51,5 @@ describe('Array reactivity', function () {
       'reactivité : set length - 1',
       'reactivité : set item - 0'
     ])
-
-
   })
 })

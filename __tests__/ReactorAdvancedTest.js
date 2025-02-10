@@ -33,3 +33,39 @@ describe('checks object in array reactivity', function () {
     expect(r.getters.getItems).toEqual({ a1: 1 })
   })
 })
+
+describe('check equipment inventory error', function () {
+  it('should recompute getter when changin one of object properties', function () {
+    const r = new Reactor({
+      state: {
+        equipment: {
+          chest: null,
+          weapon: null
+        }
+      },
+      getters: {
+        getEquipment: (state) => state.equipment,
+        getArmorClass: (state) => {
+          if (state.equipment.chest !== null) {
+            return state.equipment.chest.ac
+          } else {
+            return -1
+          }
+        }
+      },
+      mutations: {
+        equipItem: ({ state }, { item }) => {
+          state.equipment.chest = item
+        },
+      },
+      config: {
+        mutationParamOrder: Reactor.CONSTS.MUTATION_PARAM_ORDER_CONTEXT_PAYLOAD
+      }
+    })
+    expect(r.getters.getArmorClass).toBe(-1)
+    r.mutations.equipItem({ item: { ac: 11 } })
+    expect(r.getters.getArmorClass).toBe(11)
+    r.mutations.equipItem({ item: { ac: 12 } })
+    expect(r.getters.getArmorClass).toBe(12)
+  })
+})
