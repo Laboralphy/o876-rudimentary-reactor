@@ -20,6 +20,7 @@ describe('Reactor', function () {
     })
     expect(r.getters.getA).toBeUndefined()
     r.mutations.addA()
+    console.log(r.state)
     expect(r.getters.getA).toBe(1)
   })
 

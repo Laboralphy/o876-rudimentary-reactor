@@ -342,8 +342,14 @@ class Reactor {
       return this.createArrayProxy(aClone)
     } else {
       const oClone = {}
-      this.iterate(oTarget, (value, key) => {
-        oClone[key] = this.proxify(value)
+      Reflect.ownKeys(oTarget).forEach(key => {
+        if (typeof key === 'symbol') {
+          if (key !== SYMBOL_PROXY) {
+            oClone[key] = oTarget[key]
+          }
+        } else {
+          oClone[key] = this.proxify(oTarget[key])
+        }
       })
       return this.createProxy(oClone)
     }

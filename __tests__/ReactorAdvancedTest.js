@@ -69,3 +69,45 @@ describe('check equipment inventory error', function () {
     expect(r.getters.getArmorClass).toBe(12)
   })
 })
+
+describe('symbol managemennt', function () {
+  const SYMBOL_TEST = Symbol('test')
+  it('symbol should be still in proxified object', function () {
+    const a = { x: 1 }
+    a[SYMBOL_TEST] = true
+    expect(a[SYMBOL_TEST]).toBe(true)
+    const r = new Reactor({
+      state: {},
+      getters: {}
+    })
+
+    const b = r.proxifyObject(a)
+    expect(b[SYMBOL_TEST]).toBe(true)
+  })
+  it('symbol should be still in proxified object', function () {
+    const a = { x: 10 }
+    a[SYMBOL_TEST] = true
+    const r = new Reactor({
+      state: {
+        myList: []
+      },
+      getters: {
+        getMyListWithSymbol: (state) => state.myList.filter(x => x[SYMBOL_TEST]),
+        getMyListSum: (state) => state.myList.reduce((prev, x) => x.x + prev, 0)
+      },
+      mutations: {
+        addItem: ({ state }, { item }) => {
+          state.myList.push(item)
+        },
+      },
+      config: {
+        mutationParamOrder: Reactor.CONSTS.MUTATION_PARAM_ORDER_CONTEXT_PAYLOAD
+      }
+    })
+
+    r.mutations.addItem({ item: a })
+    expect(r.getters.getMyListWithSymbol.length).toBe(1)
+    expect(r.getters.getMyListSum).toBe(10)
+
+  })
+})
